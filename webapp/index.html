@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>ARES CODE</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* палитра снята с брендинга ARES GYM: ромб #D00504, кнопка #CB2D1E, фон #060606 */
+  --bg:#080809; --panel:#121214; --panel2:#17171A; --border:#26262B;
+  --red:#DC0F0C; --red-deep:#A80B08;
+  --white:#F2F0EC; --gray:#9A9AA0; --dim:#5F5F66; --ok:#3ADB76;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:var(--bg);color:var(--white);font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;
+     font-size:12.5px;line-height:1.55;overflow:hidden}
+#app{display:flex;flex-direction:column;height:100vh;padding:8px 8px 10px;gap:7px}
+
+/* ---------- HUD (Claude Code style header) ---------- */
+#hud{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--border);
+     border-top:2px solid var(--red);border-radius:3px;padding:6px 9px;font-size:10.5px;color:var(--gray);
+     overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+#hud::-webkit-scrollbar{display:none}
+#hud .brand{color:var(--white);font-weight:800;letter-spacing:1px}
+#hud .brand b{color:var(--red);font-weight:800}
+#hud .sep{color:var(--border)}
+#hud b{color:var(--red);font-weight:600}
+
+/* ---------- welcome block ---------- */
+#welcome{background:var(--panel);border:1px solid var(--border);border-radius:3px;padding:16px 14px 12px;text-align:center}
+.gem{width:26px;height:26px;background:var(--red);transform:rotate(45deg);margin:2px auto 14px;
+     box-shadow:0 0 18px 4px rgba(220,15,12,.55),0 0 60px 12px rgba(220,15,12,.18);position:relative}
+.gem::after{content:"";position:absolute;inset:6px;background:var(--red-deep)}
+.wTitle{font-size:21px;font-weight:800;letter-spacing:4px}
+.wTitle b{color:var(--red);font-weight:800}
+.wSub{color:var(--gray);font-size:10px;letter-spacing:3px;margin-top:3px}
+.wMeta{color:var(--dim);font-size:10.5px;margin-top:9px}
+.wMeta b{color:var(--gray);font-weight:600}
+.divider{height:3px;margin:11px 0 8px;border-radius:1px;
+         background:linear-gradient(90deg,var(--red) 0 76%,#2A2A30 76% 100%)}
+.wTips{color:var(--dim);font-size:9.5px;letter-spacing:1px}
+
+/* ---------- terminal ---------- */
+#term{flex:1;overflow-y:auto;background:var(--panel);border:1px solid var(--border);border-radius:3px;
+      padding:10px 11px;scrollbar-width:thin;scrollbar-color:#2A2A30 transparent}
+.ln{white-space:pre-wrap;word-break:break-word}
+.dim{color:var(--dim)} .gray{color:var(--gray)} .red{color:var(--red)} .ok{color:var(--ok)}
+.white{color:var(--white)}
+.planbox{border-left:2px solid var(--red);background:var(--panel2);padding:6px 9px;margin:5px 0;border-radius:0 3px 3px 0;color:#FFD9CF}
+.outbox{border-left:2px solid #2A2A30;background:var(--panel2);padding:6px 9px;margin:5px 0;border-radius:0 3px 3px 0;color:var(--gray);font-size:11.5px}
+.chip{display:inline-block;border:1px solid #3A3A40;color:var(--dim);border-radius:2px;padding:0 7px;
+      font-size:9.5px;cursor:pointer;margin:3px 0;user-select:none}
+.chip:active{color:var(--red)}
+.reason{border-left:2px solid #333;color:#4E4E55;font-size:11px;padding:4px 9px;margin:2px 0;white-space:pre-wrap}
+.cursor{display:inline-block;width:7px;height:13px;background:var(--red);vertical-align:-2px;
+        animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* ---------- modes / prompt ---------- */
+#modes{display:flex;gap:6px}
+#modes button{flex:1;background:var(--panel);border:1px solid var(--border);color:var(--dim);
+  font-family:inherit;font-size:11px;font-weight:600;letter-spacing:2px;padding:9px 0;border-radius:3px;cursor:pointer}
+#modes button.on{color:var(--red);border-color:var(--red);background:#190907}
+#modes #bPower{flex:0 0 84px;color:var(--gray)}
+#modes #bPower.on{color:var(--red)}
+#prompt{display:flex;gap:8px;align-items:center;background:var(--panel);border:1px solid var(--border);
+        border-radius:3px;padding:9px 11px}
+#prompt .ps1{color:var(--red);font-weight:800;white-space:nowrap;font-size:12px}
+#inp{flex:1;background:transparent;border:none;outline:none;color:var(--white);font-family:inherit;
+     font-size:12.5px;caret-color:var(--red)}
+#inp::placeholder{color:#45454B}
+#bSend{background:var(--red);color:#fff;border:none;border-radius:2px;font-family:inherit;font-weight:800;
+       padding:6px 12px;cursor:pointer;font-size:12px}
+#bSend:active{background:var(--red-deep)}
+#quick{display:flex;gap:6px}
+#quick button{flex:1;background:none;border:1px solid var(--border);color:var(--dim);border-radius:3px;
+  padding:7px 0;font-family:inherit;font-size:10px;letter-spacing:1px;cursor:pointer}
+#quick button:active{color:var(--red);border-color:var(--red)}
+
+/* ---------- gate (как у ARES GYM · ДОСТУП) ---------- */
+#gate{position:fixed;inset:0;background:#050506;display:flex;align-items:center;justify-content:center;padding:22px;z-index:50}
+#gate .card{width:100%;max-width:420px;background:#141416;border:1px solid #26262A;border-top:3px solid var(--red);
+            border-radius:3px;padding:20px 18px 22px}
+#gate .gt{color:var(--red);font-size:12px;font-weight:800;letter-spacing:3px;margin-bottom:14px}
+#gate .gl{color:var(--dim);font-size:10px;letter-spacing:2px;margin-bottom:8px}
+#gate .gb{color:var(--white);font-size:12.5px;margin-bottom:16px}
+#gate .gi{width:100%;background:#0A0A0B;border:1px solid var(--red);border-radius:2px;color:var(--white);
+          font-family:inherit;font-size:13px;padding:12px 12px;outline:none;margin-bottom:14px}
+#gate .gi::placeholder{color:#45454B}
+#gate #bReq{display:inline-flex;align-items:center;gap:9px;background:var(--red);color:#fff;border:none;
+        border-radius:2px;font-family:inherit;font-weight:800;font-size:13px;letter-spacing:2px;padding:13px 22px;cursor:pointer}
+#gate #bReq:active{background:var(--red-deep)}
+#gate .gmsg{color:var(--gray);font-size:11px;margin-top:12px}
+#gate .gem{margin:0 auto 16px}
+.hidden{display:none!important}
+.scan{position:fixed;inset:0;pointer-events:none;z-index:40;
+      background:repeating-linear-gradient(0deg,rgba(255,255,255,.012) 0 1px,transparent 1px 3px)}
+</style>
+</head>
+<body>
+<div class="scan"></div>
+
+<!-- гейт доступа — как диалог ARES GYM -->
+<div id="gate" class="hidden">
+  <div class="card">
+    <div class="gem"></div>
+    <div class="gt">ARES CODE · ДОСТУП</div>
+    <div class="gl">ДОСТУП ОГРАНИЧЕН</div>
+    <div class="gb">Это приватный терминал. Отправь заявку — владелец получит её в Telegram и откроет доступ кнопкой ✅.</div>
+    <button id="bReq">🔒 ЗАПРОСИТЬ ДОСТУП</button>
+    <div class="gmsg" id="gateMsg"></div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <div id="hud">
+    <span class="brand">ARES<b>◆</b>CODE</span><span class="sep">│</span>
+    <span id="hudSys">CPU —% · RAM —% · DISK —%</span><span class="sep">│</span>
+    <span id="hudTok">TOK — | REQ —</span><span class="sep">│</span>
+    <span id="hudSt" class="dim">—</span>
+  </div>
+
+  <div id="welcome">
+    <div class="gem"></div>
+    <div class="wTitle">ARES <b>CODE</b></div>
+    <div class="wSub">TERMINAL · AGENT</div>
+    <div class="wMeta" id="wModel">GLM-4.7-Flash · failover → Gemini → OpenRouter → OmniRoute</div>
+    <div class="wMeta" id="wDir">workspace/<b>default</b></div>
+    <div class="divider"></div>
+    <div class="wTips">SHELL — прямые команды · CODE — план→run→fix · CHAT — вопросы · 📦 архив · ❄ холод</div>
+  </div>
+
+  <div id="term"></div>
+
+  <div id="modes">
+    <button data-m="CHAT" class="on">CHAT</button>
+    <button data-m="CODE">CODE</button>
+    <button data-m="SHELL">SHELL</button>
+    <button id="bPower">⚡ AUTO</button>
+  </div>
+
+  <form id="prompt" autocomplete="off">
+    <span class="ps1" id="ps1">◆ &gt;</span>
+    <input id="inp" placeholder="спроси что угодно…">
+    <button id="bSend" type="submit">⏎</button>
+  </form>
+
+  <div id="quick">
+    <button id="bArch">📦 АРХИВ</button>
+    <button id="bCold">❄ ХОЛОД</button>
+    <button id="bClean">🧹 УБОРКА</button>
+    <button id="bStat">⚡ СТАТУС</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+try { tg.ready(); tg.expand(); tg.setHeaderColor('#0A0A0B'); tg.setBackgroundColor('#0A0A0B'); } catch(e) {}
+const INIT = (tg && tg.initData) || '';
+const $ = id => document.getElementById(id);
+const term = $('term');
+let MODE='CHAT', POWER='AUTO', PROJECT='default', busy=false, t0=0, lastTok=0, lastProv='';
+
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+async function api(path, opts={}){
+  const r = await fetch(path, {...opts, headers:{'Content-Type':'application/json','X-Telegram-Init-Data':INIT, ...(opts.headers||{})}});
+  if (r.status===403) throw Object.assign(new Error('403'),{code:403});
+  return r;
+}
+async function japi(path, opts={}){ const r = await api(path,opts); return r.json(); }
+
+/* ---------- вывод ---------- */
+function esc(){ const d=document.createElement('div'); d.className='ln'; term.appendChild(d); term.scrollTop=1e9; return d; }
+function line(text, cls=''){ const d=esc(); d.className='ln '+cls; d.textContent=text; term.scrollTop=1e9; return d; }
+function outbox(text){ const d=document.createElement('div'); d.className='outbox'; d.textContent=text; term.appendChild(d); term.scrollTop=1e9; }
+
+/* typewriter: дельты стримятся в ОДНУ строку, 15 мс/символ */
+let dl=null, dbuf='', dtyping=false;
+async function typeDelta(){
+  if (dtyping) return; dtyping=true;
+  const speed = MODE==='SHELL' ? 2 : 15;
+  while (dl && dbuf.length){
+    dl.textContent += dbuf[0]; dbuf = dbuf.slice(1); term.scrollTop=1e9;
+    await sleep(speed);
+  }
+  dtyping=false;
+}
+function delta(s){
+  if (!dl){ dl=esc(); const c=document.createElement('span'); c.className='cursor'; dl.appendChild(c); }
+  dbuf += s; typeDelta();
+}
+function closeDelta(){
+  if (dl){
+    const cur = dl.querySelector('.cursor'); if (cur) cur.remove();
+    if (dbuf.length) dl.textContent += dbuf;  // конец стрима: дописываем остаток сразу, ничего не теряем
+  }
+  dl=null; dbuf='';
+}
+
+/* reasoning: 🧠-чип, текст тусклый, по клику раскрывается */
+let rbuf=null, rtext='', rblock=null;
+function reason(s){
+  if (!rbuf){
+    rbuf=document.createElement('div');
+    const chip=document.createElement('span'); chip.className='chip'; chip.textContent='🧠 мышление';
+    rblock=document.createElement('div'); rblock.className='reason hidden';
+    chip.onclick=()=>rblock.classList.toggle('hidden');
+    rblock.textContent='';
+    rbuf.appendChild(chip); rbuf.appendChild(rblock);
+    term.appendChild(rbuf);
+  }
+  rtext += s; rblock.textContent = rtext; term.scrollTop=1e9;
+}
+function resetResp(){ closeDelta(); rbuf=null; rtext=''; rblock=null; }
+
+/* ---------- SSE ---------- */
+async function send(){
+  if (busy) return;
+  const inp=$('inp'); const text=inp.value.trim(); if(!text) return;
+  inp.value=''; busy=true; t0=performance.now(); lastTok=0; lastProv='';
+  line((MODE==='SHELL' ? 'ares:~/'+PROJECT+'$ ' : (MODE==='CODE'?'◆ code❯ ':'◆ ❯ '))+text, 'gray');
+  try{
+    const r = await api('/api/chat',{method:'POST',body:JSON.stringify({mode:MODE,text,power:POWER,project:PROJECT})});
+    const rd=r.body.getReader(), dec=new TextDecoder(); let buf='';
+    while(true){
+      const {done,value}=await rd.read(); if(done) break;
+      buf+=dec.decode(value,{stream:true});
+      let i; while((i=buf.indexOf('\n\n'))>=0){
+        const raw=buf.slice(0,i).trim(); buf=buf.slice(i+2);
+        if(!raw.startsWith('data:')) continue;
+        let ev; try{ ev=JSON.parse(raw.slice(5)); }catch(e){ continue; }
+        handle(ev);
+      }
+    }
+  }catch(e){ line('!! сеть: '+e.message,'red'); }
+  const dt=((performance.now()-t0)/1000).toFixed(1);
+  line(`Forged for ${dt}s`+(lastProv?` · ${lastProv}`:'')+(lastTok?` · +${fmtK(lastTok)} TOK`:''), 'dim');
+  line('',''); busy=false; inp.focus();
+}
+function fmtK(n){ n=+n||0; return n>=1000 ? (n/1000).toFixed(1)+'k' : String(n); }
+
+function handle(ev){
+  switch(ev.t){
+    case 'provider': closeDelta(); lastProv=ev.s; line('» '+ev.s,'dim'); break;
+    case 'delta': delta(ev.s); break;
+    case 'reason': reason(ev.s); break;
+    case 'mode': line('· '+ev.s,'dim'); break;
+    case 'note': closeDelta(); line('· '+ev.s,'dim'); break;
+    case 'plan': {
+      closeDelta();
+      line('┌─ ПЛАН','red');
+      outbox(ev.s); break;
+    }
+    case 'step': {
+      closeDelta();
+      const mark = ev.ok ? '✔' : '✖';
+      const cls = ev.ok ? 'ok' : 'red';
+      if (ev.kind==='shell') line(`${mark} exit ${ev.exit}`, cls);
+      else if (ev.kind==='run') line(`${mark} $ ${ev.s} → exit ${ev.exit}`, cls);
+      else if (ev.kind==='write') line(`${mark} записан ${ev.s}`, cls);
+      else if (ev.kind==='read') line(`${mark} прочитан ${ev.s}`, cls);
+      if (ev.out) outbox(ev.out);
+      break;
+    }
+    case 'out': outbox(ev.s); break;
+    case 'usage': lastTok=ev.tok; break;
+    case 'state': hudTok(ev.hud, ev.state); break;
+    case 'done': closeDelta(); line('✔ '+ev.s,'ok'); break;
+    case 'fail': closeDelta(); line('✖ '+ev.s,'red'); break;
+    case 'err': closeDelta(); line('!! '+ev.s,'red'); break;
+    case 'end': closeDelta(); resetResp(); break;
+  }
+}
+
+/* ---------- HUD (опрос 5с) ---------- */
+function hudTok(hud, state){
+  $('hudTok').textContent=hud;
+  const st=$('hudSt'); st.textContent='['+state+']';
+  st.className = state==='OK' ? 'gray' : (state==='WARN' ? 'ok' : 'red');
+}
+async function hud(){
+  try{
+    const d=await japi('/api/hud');
+    const s=d.sys;
+    $('hudSys').textContent=`CPU ${Math.round(s.cpu)}% · RAM ${Math.round(s.ram_pct)}% · DISK ${Math.round(s.disk_pct)}% · up ${fmtUp(s.uptime_s)}`;
+    hudTok(d.budget.hud, d.budget.state);
+  }catch(e){}
+}
+function fmtUp(sec){ const h=Math.floor(sec/3600), m=Math.floor(sec%3600/60); return h? h+'ч'+m+'м' : m+'м'; }
+
+/* ---------- режимы ---------- */
+const PS1={CHAT:'◆ ❯', CODE:'◆ code❯', SHELL:'ares:~/'+PROJECT+'$'};
+const PH={CHAT:'спроси что угодно…', CODE:'опиши задачу — сделает сам: план→код→запуск→фикс', SHELL:'команда для песочницы: python3 main.py'};
+document.querySelectorAll('#modes button[data-m]').forEach(b=>{
+  b.onclick=()=>{
+    MODE=b.dataset.m;
+    document.querySelectorAll('#modes button[data-m]').forEach(x=>x.classList.toggle('on',x===b));
+    $('ps1').textContent = MODE==='SHELL' ? 'ares:~/'+PROJECT+'$' : (MODE==='CODE'?'◆ code❯':'◆ ❯');
+    $('inp').placeholder=PH[MODE]; $('inp').focus();
+  };
+});
+$('bPower').onclick=()=>{
+  POWER = POWER==='AUTO'?'FAST':(POWER==='FAST'?'MAX':'AUTO');
+  $('bPower').textContent='⚡ '+POWER; $('inp').focus();
+};
+
+/* ---------- quick-действия ---------- */
+$('bArch').onclick=async()=>{ try{ const d=await japi('/api/archive',{method:'POST',body:JSON.stringify({project:PROJECT})});
+  line(`📦 ${d.archive.project} · ${fmtK(d.archive.size)}Б · sha${d.archive.sha256.slice(0,10)}`,'dim'); }catch(e){ line('📦 только для владельца','dim'); } };
+$('bCold').onclick=async()=>{ try{ const d=await japi('/api/cold',{method:'POST',body:JSON.stringify({project:PROJECT})});
+  line(d.ok? `❄ ${d.result.mailbox} · частей ${d.result.parts}` : '❄ '+d.result.error, d.ok?'dim':'red'); }catch(e){ line('❄ только для владельца','dim'); } };
+$('bClean').onclick=async()=>{ try{ const d=await japi('/api/cleanup',{method:'POST',body:JSON.stringify({dry_run:true})});
+  outbox('🧹 убралось бы:\n'+(d.would_move.join('\n')||'(ничего)')+'\nактивный защищён: '+d.protected); }catch(e){ line('🧹 только для владельца','dim'); } };
+$('bStat').onclick=async()=>{ try{ const d=await japi('/healthz');
+  const p=Object.entries(d.providers||{}).map(([k,v])=>`${k}:${v.ok?'✅':'⚠️'}`).join(' · ')||'нет ключей';
+  line(`⚡ ${d.budget.hud} [${d.budget.state}] · ${p}`,'dim'); }catch(e){ line('⚡ нет связи','red'); } };
+
+/* ---------- ввод ---------- */
+$('prompt').addEventListener('submit', e=>{ e.preventDefault(); send(); });
+
+/* ---------- гейт ---------- */
+$('bReq').onclick=async()=>{
+  $('gateMsg').textContent='… отправляю';
+  try{ await japi('/api/access_request',{method:'POST',body:'{}'});
+       $('gateMsg').textContent='✔ Заявка у владельца. Как одобрит — вернись в меню бота и открой заново.'; }
+  catch(e){ $('gateMsg').textContent='Не вышло: открой приложение через Telegram (/start → Open Ares Code).'; }
+};
+
+/* ---------- boot (стиль Claude Code) ---------- */
+(async function boot(){
+  let w=null;
+  try{ w=await japi('/api/whoami',{method:'POST',body:'{}'}); }catch(e){}
+  if(!w || !w.approved){
+    $('gate').classList.remove('hidden'); $('app').classList.add('hidden');
+    if(w && w.requested) $('gateMsg').textContent='Заявка уже отправлена — жди ✅ от владельца.';
+    return;
+  }
+  $('app').classList.remove('hidden');
+  PROJECT=w.project||PROJECT;
+  $('wDir').innerHTML='workspace/<b></b>'; $('wDir').querySelector('b').textContent=PROJECT;
+  hud(); setInterval(hud, 5000);
+  $('inp').focus();
+})();
+</script>
+</body>
+</html>
