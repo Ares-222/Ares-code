@@ -54,6 +54,27 @@ def db_active() -> str | None:
         return None
 
 
+def wipe_project(project: str) -> list:
+    """Полная очистка содержимого проекта (включая скрытые файлы) — всё в .trash.
+
+    В отличие от cleanup() трогает даже активный проект; сам проект остаётся пустым.
+    Из .trash всё удалится автоматически через TRASH_TTL_H (24ч) или /cleanup yes.
+    """
+    base = config.WORKSPACE / project
+    if not base.exists():
+        return []
+    stamp = time.strftime("%Y%m%d_%H%M%S")
+    config.TRASH_DIR.mkdir(parents=True, exist_ok=True)
+    moved = []
+    for child in sorted(base.iterdir()):
+        try:
+            shutil.move(str(child), str(config.TRASH_DIR / f"wipe_{stamp}_{project}_{child.name}"))
+            moved.append(child.name)
+        except OSError:
+            continue
+    return moved
+
+
 def purge_trash(ttl_h: int | None = None) -> list:
     ttl = (ttl_h or config.TRASH_TTL_H) * 3600
     now = time.time()
