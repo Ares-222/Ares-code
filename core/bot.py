@@ -69,21 +69,28 @@ async def cmd_id(m: Message):
 
 
 HELP_TEXT = ("ARES CODE · справка\n\n"
+             "Терминал (кнопка ⬛): просто опиши задачу — агент сам спланирует, напишет код, "
+             "запустит, починит ошибки и отчитается. Вопросы — просто спрашивай.\n"
+             "!команда — прямая shell в песочнице, например: !python3 main.py\n"
+             "Плагины с GitHub: «поставь плагин https://github.com/...» — склонирует в plugins/, "
+             "зависимости поставит, подключит; «удали плагин <имя>» — уберёт.\n\n"
              "Команды бота:\n"
              "/start — открыть терминал\n"
              "/status — статус: CPU/RAM/диск, провайдеры, бюджет\n"
              "/limits — суточные лимиты\n"
              "/health — пинг провайдеров\n"
-             "/archives — список архивов\n"
-             "/archive <проект> — заархивировать проект\n"
+             "/archives — список архивов + кнопки «📥 получить файл»\n"
+             "/archive <проект> — заархивировать и прислать файл сюда\n"
              "/cold <проект> — архив в холодное хранилище\n"
              "/coldstatus — статус почтовых ящиков\n"
              "/restore <id> — восстановить архив\n"
+             "/plugins — плагины активного проекта\n"
              "/cleanup — уборка (посмотреть); /cleanup yes — выполнить\n"
              "/wipe [проект] — очистить содержимое проекта, даже активного\n"
+             "/files on|off — автосохранение файлов задач в чат\n"
              "/id — мой Telegram ID\n"
              "/help — эта справка\n\n"
-             "Команды SHELL (режим SHELL в терминале):\n"
+             "Команды SHELL (префикс ! в терминале):\n"
              "python3 python pip node npm git curl ffmpeg zip unzip sqlite3\n"
              "ls cat head tail grep find echo printf mkdir touch cp mv rm pwd\n"
              "wc sed awk tar jq diff sort uniq stat du df chmod\n\n"
@@ -229,7 +236,46 @@ async def cmd_archives(m: Message):
         return
     lines = [f"#{r['id']} {r['project']} {fmt(r['size'])}Б {'❄' if r['cold'] else '💾'} "
              f"sha{r['sha256'][:8]}" for r in rows]
-    await m.answer("Архивы (новые сверху):\n" + "\n".join(lines))
+    btns = [[InlineKeyboardButton(text=f"📥 #{r['id']} {r['project']}",
+                                  callback_data=f"getarc:{r['id']}")] for r in rows]
+    await m.answer("Архивы (новые сверху) — жми, чтобы получить файл:\n" + "\n".join(lines),
+                   reply_markup=InlineKeyboardMarkup(inline_keyboard=btns))
+
+
+@router.callback_query(F.data.startswith("getarc:"))
+async def cb_getarc(cb: CallbackQuery):
+    """Кнопка «📥 получить файл» у архива — файл приходит документом в этот чат."""
+    if not db.is_owner(cb.from_user.id):
+        await cb.answer("только владелец", show_alert=True)
+        return
+    try:
+        aid = int((cb.data or "").split(":", 1)[1])
+    except (IndexError, ValueError):
+        await cb.answer("битая кнопка", show_alert=True)
+        return
+    row = db.get_archive(aid)
+    if not row:
+        await cb.answer("архив не найден", show_alert=True)
+        return
+    await cb.answer("отправляю файл…")
+    from pathlib import Path
+    if row["cold"] and not Path(row["path"]).exists():
+        try:
+            coldstore.pull_archive(aid)
+        except Exception as e:
+            try:
+                await _bot.send_message(cb.from_user.id, f"❄ не удалось достать #{aid} из холодного хранилища: {e}")
+            except Exception:
+                pass
+            return
+    ok = await send_archive_to_chat(cb.from_user.id, dict(row))
+    if not ok:
+        try:
+            await _bot.send_message(
+                cb.from_user.id,
+                f"⚠️ Файл архива #{aid} не найден на диске. Пересоздай: /archive {row['project']}")
+        except Exception:
+            pass
 
 
 @router.message(Command("archive"))
@@ -242,8 +288,10 @@ async def cmd_archive(m: Message):
         return
     try:
         row = storage.make_archive(parts[1])
+        sent = await send_archive_to_chat(m.from_user.id, row)
         await m.answer(f"📦 {row['path']}\n{fmt(row['size'])}Б · sha256 {row['sha256'][:16]}…\n"
-                       f"В холодное хранилище: /cold {row['project']}")
+                       + ("Файл отправил в чат ⬆\n" if sent else "")
+                       + f"В холодное хранилище: /cold {row['project']}")
     except Exception as e:
         await m.answer(f"Ошибка: {e}")
 
@@ -331,6 +379,25 @@ async def cmd_wipe(m: Message):
                    reply_markup=kb_open())
 
 
+@router.message(Command("files"))
+async def cmd_files(m: Message):
+    """Вкл/выкл автосохранение файлов задач в чат."""
+    if not db.is_owner(m.from_user.id):
+        return
+    parts = (m.text or "").split()
+    arg = parts[1].lower() if len(parts) > 1 else ""
+    cur = db.kv_get("send_files", "1") != "0"
+    if arg in ("off", "выкл", "0"):
+        db.kv_set("send_files", "0")
+        await m.answer("📦 Файлы задач в чат: ВЫКЛ\nВернуть: /files on")
+    elif arg in ("on", "вкл", "1"):
+        db.kv_set("send_files", "1")
+        await m.answer("📦 Файлы задач в чат: ВКЛ")
+    else:
+        await m.answer(f"📦 Файлы задач в чат: {'ВКЛ' if cur else 'ВЫКЛ'}\n"
+                       f"Переключить: /files on | /files off")
+
+
 @router.message(Command("coldstatus"))
 async def cmd_coldstatus(m: Message):
     if not db.is_owner(m.from_user.id):
@@ -345,16 +412,48 @@ async def cmd_coldstatus(m: Message):
     await m.answer("Холодное хранилище:\n" + "\n".join(lines))
 
 
+@router.message(Command("plugins"))
+async def cmd_plugins(m: Message):
+    """Список плагинов/софта, установленных агентом в plugins/ активного проекта."""
+    if not db.is_owner(m.from_user.id):
+        return
+    from pathlib import Path
+    project = db.kv_get("active_project", "default")
+    base = Path(config.WORKSPACE) / project / "plugins"
+    if not base.exists() or not any(p.is_dir() for p in base.iterdir()):
+        await m.answer(f"Плагинов в workspace/{project}/plugins нет.\n"
+                       f"Ставь в терминале: «поставь плагин https://github.com/...» — "
+                       f"агент склонирует, поставит зависимости и подключит.", reply_markup=kb_open())
+        return
+    lines = []
+    for d in sorted(p for p in base.iterdir() if p.is_dir()):
+        n = sum(1 for x in d.rglob("*") if x.is_file())
+        lines.append(f"• {d.name} · {n} файлов")
+    await m.answer(f"Плагины workspace/{project}/plugins:\n" + "\n".join(lines) +
+                   "\nУдаление: в терминале «удали плагин <имя>» или /wipe",
+                   reply_markup=kb_open())
+
+
 # ---------------------------------------------------------------- прочее
 
 @router.message()
 async def fallback(m: Message):
     uid = m.from_user.id if m.from_user else 0
     db.upsert_user(uid, m.from_user.full_name if m.from_user else "user")
-    if db.is_owner(uid) or db.is_approved(uid):
-        await m.answer("Чат-команды тут не обрабатываются — работай в терминале ⬛.", reply_markup=kb_open())
-    else:
+    if not (db.is_owner(uid) or db.is_approved(uid)):
         await m.answer(GATE_TEXT, reply_markup=kb_request())
+        return
+    txt = (m.text or "").strip()
+    if txt.startswith("/"):
+        # команда не сработала выше — честно говорим, какая именно, а не пугаем заглушкой
+        cmd = txt.split()[0].split("@")[0]
+        await m.answer(f"❓ Команда {cmd} не распознана.\n"
+                       f"Весь список: /help\n"
+                       f"Если нужна shell-команда — с префиксом ! в терминале ⬛.",
+                       reply_markup=kb_open())
+    else:
+        await m.answer("Чат — для команд и файлов от агента. Задачи и вопросы — в терминале ⬛.",
+                       reply_markup=kb_open())
 
 
 def fmt_uptime(sec: int) -> str:
@@ -373,6 +472,26 @@ async def notify_owners(text: str):
             await _bot.send_message(oid, text)
         except Exception:
             pass
+
+
+async def send_archive_to_chat(uid: int, row: dict) -> bool:
+    """Файл архива уходит документом прямо в чат Telegram."""
+    if _bot is None:
+        return False
+    from pathlib import Path
+    from aiogram.types import FSInputFile
+    p = Path(row.get("path", ""))
+    if not p.is_file():
+        return False
+    try:
+        await _bot.send_document(
+            uid, FSInputFile(str(p), filename=p.name),
+            caption=f"📦 Архив #{row['id']} · {row['project']} · {fmt(row['size'])}Б · "
+                    f"sha{row['sha256'][:8]}\nВ холодное хранилище: /cold {row['project']}")
+        return True
+    except Exception as e:
+        log.warning("send_archive: %s", e)
+        return False
 
 
 async def start_polling():
@@ -402,8 +521,11 @@ async def start_polling():
             BotCommand(command="status", description="статус системы"),
             BotCommand(command="limits", description="суточные лимиты"),
             BotCommand(command="health", description="пинг провайдеров"),
-            BotCommand(command="archives", description="список архивов"),
+            BotCommand(command="archives", description="архивы + получить файл"),
+            BotCommand(command="plugins", description="плагины проекта"),
             BotCommand(command="cleanup", description="уборка workspace"),
+            BotCommand(command="wipe", description="очистить проект"),
+            BotCommand(command="files", description="файлы задач в чат вкл/выкл"),
             BotCommand(command="id", description="мой Telegram ID"),
         ])
     except Exception as e:
