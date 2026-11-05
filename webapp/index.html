@@ -1,3102 +1,353 @@
-<!DOCTYPE html>
+<!doctype html>
+<!-- ═══ ARES CODE v6 · webapp/index.html · единый терминал-агент ═══ -->
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="theme-color" content="#0a0a0b">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<title>ARES GYM — Программы тренировок</title>
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://telegram.org 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; img-src 'self' data:; connect-src 'self' https://ares-gym-bot.maks222berg.workers.dev; object-src 'none'; base-uri 'self'">
-<link rel="manifest" href="manifest.json">
-<!-- Telegram Mini App SDK -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>ARES CODE</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<script>
-document.documentElement.classList.add('js');
-setTimeout(function(){ if(!window.__aresReady) document.documentElement.classList.add('nojs-ok'); }, 3000);
-</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
-<link href="https://cdn.jsdelivr.net/npm/remixicon@4.5.0/fonts/remixicon.css" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#0a0a0b; --bg2:#0f0f11; --panel:#131315;
-  --line:#212125; --line2:#38383e;
-  --txt:#f1efe9; --silver:#b9bcc2; --dim:#84878d;
-  --red:#e10600; --red-hi:#ff3b2a; --red-deep:#8f0800;
-  --it-g:#008C45; --it-w:#F4F5F0; --it-r:#CD212A;
-  --fh:'Oswald',sans-serif; --fb:'Inter',sans-serif; --fm:'JetBrains Mono',monospace;
+  /* фирменная палитра: ромб #D00504, кнопка #CB2D1E, фон #060606 */
+  --bg:#080809; --panel:#121214; --panel2:#17171A; --border:#26262B;
+  --red:#DC0F0C; --red-deep:#A80B08;
+  --white:#F2F0EC; --gray:#9A9AA0; --dim:#5F5F66; --ok:#3ADB76;
 }
-*{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth;scroll-padding-top:96px;background:var(--bg)}
-html.no-scroll{overflow:hidden}
-body{background:var(--bg);color:var(--txt);font-family:var(--fb);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;overflow-x:hidden}
-body::before{content:"";position:fixed;inset:0;z-index:2000;pointer-events:none;opacity:.05;
-  background-image:url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2"/></filter><rect width="180" height="180" filter="url(%23n)"/></svg>')}
-::selection{background:var(--red);color:#fff}
-::-webkit-scrollbar{width:10px;background:var(--bg)}
-::-webkit-scrollbar-thumb{background:#26262b;border:2px solid var(--bg)}
-img{display:block;max-width:100%}
-a{color:inherit;text-decoration:none}
-button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
-:focus-visible{outline:2px solid var(--red);outline-offset:2px}
-.mono{font-family:var(--fm)}
-.container{width:min(1280px,94vw);margin-inline:auto}
-.tri{display:inline-block;width:16px;height:9px;flex:none;background:linear-gradient(90deg,var(--it-g) 0 33.4%,var(--it-w) 33.4% 66.7%,var(--it-r) 66.7% 100%)}
-.flag{position:absolute;top:64px;width:6px;height:150px;opacity:.9;background:linear-gradient(180deg,var(--it-g) 0 33.3%,var(--it-w) 33.3% 66.6%,var(--it-r) 66.6% 100%)}
-.flag.l{left:0}.flag.r{right:0}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:var(--bg);color:var(--white);font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;
+     font-size:12.5px;line-height:1.55;overflow:hidden}
+#app{display:flex;flex-direction:column;height:100vh;padding:8px 8px 10px;gap:7px}
 
-#splash{position:fixed;inset:0;z-index:4000;background:var(--bg);display:grid;place-items:center;animation:splashOut .45s ease 1.3s forwards}
-#splash.gone{display:none}
-@keyframes splashOut{to{opacity:0;visibility:hidden}}
-.sp-in{display:flex;flex-direction:column;align-items:center;gap:0;text-align:center}
-.sp-mark{width:16px;height:16px;background:var(--red);transform:rotate(45deg);margin-bottom:22px;box-shadow:0 0 24px rgba(225,6,0,.6)}
-.sp-name{font:700 clamp(2.6rem,8vw,4.4rem)/1 var(--fh);letter-spacing:.06em;text-transform:uppercase}
-.sp-name em{font-style:normal;color:var(--red)}
-.sp-sub{font:500 9px var(--fm);letter-spacing:.34em;color:var(--dim);margin-top:10px;text-transform:uppercase}
-.sp-bar{width:210px;height:2px;background:var(--line);overflow:hidden;margin-top:26px}
-.sp-bar i{display:block;height:100%;width:100%;background:var(--red);transform:translateX(-101%);animation:spLoad 1.15s cubic-bezier(.3,.8,.3,1) .1s forwards}
-@keyframes spLoad{to{transform:none}}
-.sp-cap{font:500 8.5px var(--fm);letter-spacing:.3em;color:#5a5d63;margin-top:14px;text-transform:uppercase}
+/* ---------- HUD (Claude Code style header) ---------- */
+#hud{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--border);
+     border-top:2px solid var(--red);border-radius:3px;padding:6px 9px;font-size:10.5px;color:var(--gray);
+     overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+#hud::-webkit-scrollbar{display:none}
+#hud .brand{color:var(--white);font-weight:800;letter-spacing:1px}
+#hud .brand b{color:var(--red);font-weight:800}
+#hud .sep{color:var(--border)}
+#hud b{color:var(--red);font-weight:600}
+#hudPow{color:var(--gray);cursor:pointer;user-select:none;flex:0 0 auto}
+#hudPow:active{color:var(--red)}
 
-.js [data-reveal]{opacity:0;transform:translateY(24px);transition:opacity .8s cubic-bezier(.2,.7,.2,1),transform .8s cubic-bezier(.2,.7,.2,1);transition-delay:var(--d,0s)}
-.js [data-reveal].in{opacity:1;transform:none}
-.nojs-ok [data-reveal]{opacity:1!important;transform:none!important}
-@keyframes fadeUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
-.js .hr{animation:fadeUp .9s cubic-bezier(.2,.7,.2,1) both;animation-delay:var(--hd,0s)}
+/* ---------- welcome block ---------- */
+#welcome{background:var(--panel);border:1px solid var(--border);border-radius:3px;padding:16px 14px 12px;text-align:center}
+.gem{width:26px;height:26px;background:var(--red);transform:rotate(45deg);margin:2px auto 14px;
+     box-shadow:0 0 18px 4px rgba(220,15,12,.55),0 0 60px 12px rgba(220,15,12,.18);position:relative}
+.gem::after{content:"";position:absolute;inset:6px;background:var(--red-deep)}
+.wTitle{font-size:21px;font-weight:800;letter-spacing:4px}
+.wTitle b{color:var(--red);font-weight:800}
+.wSub{color:var(--gray);font-size:10px;letter-spacing:3px;margin-top:3px}
+.wMeta{color:var(--dim);font-size:10.5px;margin-top:9px}
+.wMeta b{color:var(--gray);font-weight:600}
+#wDir,#wDir b{color:var(--red)}
+.divider{height:3px;margin:11px 0 8px;border-radius:1px;
+         background:linear-gradient(90deg,var(--red) 0 76%,#2A2A30 76% 100%)}
+.wTips{color:var(--dim);font-size:9.5px;letter-spacing:1px;line-height:1.8}
+.wTips b{color:var(--gray);font-weight:600}
 
-.ticker{border-bottom:1px solid var(--line);background:var(--bg2);overflow:hidden;height:34px;display:flex;align-items:center}
-.ticker-track,.bm-track{display:flex;width:max-content;white-space:nowrap;animation:tick 32s linear infinite}
-.ticker:hover .ticker-track,.big-marquee:hover .bm-track{animation-play-state:paused}
-@keyframes tick{to{transform:translateX(-50%)}}
-.tg{display:flex;align-items:center}
-.ticker span{font-family:var(--fm);font-size:10.5px;letter-spacing:.16em;color:var(--dim);padding:0 8px;text-transform:uppercase}
-.tsep{width:4px;height:14px;margin:0 14px;flex:none;background:linear-gradient(180deg,var(--it-g) 0 33.3%,var(--it-w) 33.3% 66.6%,var(--it-r) 66.6% 100%)}
+/* ---------- terminal ---------- */
+#term{flex:1;overflow-y:auto;background:var(--panel);border:1px solid var(--border);border-radius:3px;
+      padding:10px 11px;scrollbar-width:thin;scrollbar-color:#2A2A30 transparent}
+.ln{white-space:pre-wrap;word-break:break-word}
+.dim{color:var(--dim)} .gray{color:var(--gray)} .red{color:var(--red)} .ok{color:var(--ok)}
+.white{color:var(--white)}
+.planbox{border-left:2px solid var(--red);background:var(--panel2);padding:6px 9px;margin:5px 0;border-radius:0 3px 3px 0;color:#FFD9CF}
+.outbox{border-left:2px solid #2A2A30;background:var(--panel2);padding:6px 9px;margin:5px 0;border-radius:0 3px 3px 0;color:var(--gray);font-size:11.5px}
+.chip{display:inline-block;border:1px solid #3A3A40;color:var(--dim);border-radius:2px;padding:0 7px;
+      font-size:9.5px;cursor:pointer;margin:3px 0;user-select:none}
+.chip:active{color:var(--red)}
+.reason{border-left:2px solid #333;color:#4E4E55;font-size:11px;padding:4px 9px;margin:2px 0;white-space:pre-wrap}
+.cursor{display:inline-block;width:7px;height:13px;background:var(--red);vertical-align:-2px;
+        animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
 
-.nav{position:sticky;top:0;z-index:1000;transition:background .3s,border-color .3s;border-bottom:1px solid transparent}
-.nav.scrolled{background:rgba(10,10,11,.88);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);border-bottom-color:var(--line)}
-.nav-in{display:flex;align-items:center;gap:22px;height:64px}
-.logo{display:flex;align-items:center;gap:11px;flex:none}
-.logo-mark{width:12px;height:12px;background:var(--red);transform:rotate(45deg);flex:none;box-shadow:0 0 14px rgba(225,6,0,.55)}
-.logo-name{font-family:var(--fh);font-weight:700;font-size:21px;letter-spacing:.06em;line-height:1}
-.logo-name em{font-style:normal;color:var(--red)}
-.logo-sub{font-family:var(--fm);font-size:8px;letter-spacing:.26em;color:var(--dim);display:block;margin-top:2px}
-.nav-links{display:flex;gap:2px;margin-left:8px}
-.nav-links a{font-family:var(--fm);font-size:11px;letter-spacing:.14em;color:var(--silver);padding:8px 13px;border:1px solid transparent;transition:.2s}
-.nav-links a:hover{color:var(--txt)}
-.nav-links a.active{color:var(--red-hi);border-color:var(--line)}
-.nav-right{margin-left:auto;display:flex;align-items:center;gap:12px}
-.tg-ico{width:40px;height:40px;border:1px solid var(--line2);display:grid;place-items:center;font-size:18px;color:var(--silver);transition:.2s}
-.tg-ico:hover{border-color:var(--red);color:var(--red-hi)}
-.btn-red{background:var(--red);color:#fff;font-family:var(--fm);font-weight:700;font-size:11px;letter-spacing:.12em;padding:12px 18px;display:inline-flex;align-items:center;gap:9px;transition:background .2s}
-.btn-red:hover{background:var(--red-hi)}
-.burger{display:none;width:42px;height:42px;border:1px solid var(--line2);place-items:center;font-size:19px}
-.mmenu{position:fixed;inset:0;background:var(--bg);z-index:1500;display:flex;flex-direction:column;justify-content:center;padding:8vw;transform:translateY(-102%);transition:transform .55s cubic-bezier(.75,0,.2,1)}
-body.menu-open .mmenu{transform:none}
-.mmenu a{font-family:var(--fh);font-weight:600;font-size:clamp(1.9rem,7vw,3.4rem);line-height:1.15;border-bottom:1px solid var(--line);padding:9px 0;text-transform:uppercase;transition:color .2s,padding-left .25s}
-.mmenu a:hover{color:var(--red-hi);padding-left:12px}
-.m-close{position:absolute;top:18px;right:5vw;width:46px;height:46px;border:1px solid var(--line2);display:grid;place-items:center;font-size:20px}
-.m-k{font-size:10px;letter-spacing:.2em;color:var(--dim);margin-bottom:18px}
-.m-f{font-size:10px;letter-spacing:.14em;color:var(--dim);margin-top:26px;display:flex;align-items:center;gap:10px}
+/* ---------- prompt ---------- */
+#prompt{display:flex;gap:8px;align-items:center;background:var(--panel);border:1px solid var(--border);
+        border-radius:3px;padding:9px 11px}
+#prompt:focus-within{border-color:var(--red)}
+#prompt .ps1{color:var(--red);font-weight:800;white-space:nowrap;font-size:12px}
+#inp{flex:1;background:transparent;border:none;outline:none;color:var(--white);font-family:inherit;
+     font-size:12.5px;caret-color:var(--red)}
+#inp::placeholder{color:#45454B}
+#bSend{background:var(--red);color:#fff;border:none;border-radius:2px;font-family:inherit;font-weight:800;
+       padding:6px 12px;cursor:pointer;font-size:12px}
+#bSend:active{background:var(--red-deep)}
+#quick{display:flex;gap:6px}
+#quick button{flex:1;background:none;border:1px solid var(--border);color:var(--dim);border-radius:3px;
+  padding:7px 0;font-family:inherit;font-size:10px;letter-spacing:1px;cursor:pointer}
+#quick button:active{color:var(--red);border-color:var(--red)}
 
-.hero{border-bottom:1px solid var(--line);position:relative;overflow:hidden}
-.hero-grid{display:grid;grid-template-columns:1.08fr .92fr;gap:clamp(28px,4vw,56px)}
-.hero-left{display:flex;flex-direction:column;padding:clamp(34px,5vh,54px) 0 clamp(20px,3vh,30px)}
-.h-meta{font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;color:var(--dim);display:flex;align-items:center;gap:12px;margin-bottom:clamp(16px,2.5vh,26px);text-transform:uppercase}
-.sq{width:8px;height:8px;background:var(--red);display:inline-block;flex:none}
-.h-display{font-family:var(--fh);font-weight:700;font-size:clamp(4rem,10.5vw,9.6rem);line-height:.9;letter-spacing:.01em;text-transform:uppercase;margin-bottom:clamp(14px,2vh,22px)}
-.h-display .stroke{color:transparent;-webkit-text-stroke:2px var(--silver)}
-.h-display .dot{color:var(--red);-webkit-text-stroke:0}
-.h-sub{color:var(--silver);font-weight:500;font-size:14.5px;max-width:52ch;margin-bottom:clamp(18px,2.5vh,26px)}
-.defs{display:grid;gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:clamp(18px,2.5vh,26px)}
-.def{background:var(--bg);padding:14px 18px;display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start}
-.d-idx{font-family:var(--fm);font-size:11px;color:var(--red-hi);font-weight:700;padding-top:3px}
-.def h3{font-family:var(--fh);font-weight:600;font-size:16px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:3px}
-.def p{color:var(--dim);font-size:13px;max-width:52ch}
-.def.hyb{background:linear-gradient(90deg,rgba(225,6,0,.12),rgba(225,6,0,.02) 70%);border-left:3px solid var(--red)}
-.def.hyb p{color:var(--silver)}
-.def.hyb h3 em{font-style:normal;color:var(--red-hi)}
-.cta-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
-.hint{font-family:var(--fm);font-size:10px;letter-spacing:.14em;color:var(--dim);margin-top:12px}
-.hero-strip{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line)}
-.hstrip{padding:14px 18px 16px;border-left:1px solid var(--line)}
-.hstrip:first-child{border-left:0}
-.hstrip b{font-family:var(--fh);font-weight:700;font-size:clamp(1.5rem,2.4vw,2.1rem);display:block;line-height:1}
-.hstrip span{font-family:var(--fm);font-size:9.5px;letter-spacing:.16em;color:var(--dim);text-transform:uppercase}
-.hstrip b em{font-style:normal;color:var(--red)}
-
-section{padding:clamp(56px,8vw,92px) 0;position:relative}
-.sec-head{margin-bottom:clamp(28px,4vw,44px)}
-.kicker{display:flex;align-items:center;gap:14px;font-family:var(--fm);font-size:10.5px;letter-spacing:.18em;color:var(--dim);margin-bottom:18px;text-transform:uppercase}
-.kicker .idx{color:var(--red-hi);font-weight:700}
-.kicker .rule{flex:1;height:1px;background:var(--line)}
-.sec-title{font-family:var(--fh);font-weight:700;font-size:clamp(2.5rem,5.4vw,4.6rem);line-height:.95;text-transform:uppercase}
-.sec-title .o{color:var(--red)}
-.sec-desc{color:var(--dim);font-size:14px;border-left:2px solid var(--red);padding-left:18px;max-width:52ch}
-
-.pc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
-@media(max-width:1180px){.pc-grid{grid-template-columns:repeat(2,1fr)}}
-.pcard{position:relative;overflow:hidden;border:1px solid var(--line2);background:var(--panel);padding:24px 22px 22px;text-align:left;display:flex;gap:16px;align-items:flex-start;min-height:170px;transition:border-color .25s}
-.pcard::before{content:"";position:absolute;inset:0;background:var(--red);transform:translateY(101%);transition:transform .35s cubic-bezier(.65,0,.35,1);z-index:0}
-.pcard:hover::before,.pcard.active::before{transform:translateY(0)}
-.pcard:hover,.pcard.active{border-color:var(--red)}
-.pcard>*{position:relative;z-index:1;transition:color .25s}
-.pc-num{font-family:var(--fm);font-size:12px;color:var(--red-hi);font-weight:700;padding-top:6px}
-.pc-main{display:flex;flex-direction:column;gap:4px;flex:1}
-.pc-k{font-family:var(--fm);font-size:9px;letter-spacing:.24em;color:var(--dim);text-transform:uppercase}
-.pc-name{font-family:var(--fh);font-weight:700;font-size:clamp(1.7rem,2.6vw,2.3rem);line-height:1;text-transform:uppercase;letter-spacing:.02em}
-.pc-tags{font-size:12.5px;color:var(--dim);font-weight:600}
-.pc-meta{font-family:var(--fm);font-size:9.5px;letter-spacing:.12em;color:var(--dim);margin-top:8px;text-transform:uppercase}
-.pc-arrow{font-size:20px;color:var(--red-hi);align-self:flex-end;transition:transform .3s,color .25s}
-.pcard:hover *,.pcard.active *{color:#fff}
-.pcard:hover .pc-arrow,.pcard.active .pc-arrow{color:#0a0a0b;transform:rotate(45deg)}
-.pc-hint{font-family:var(--fm);font-size:10px;letter-spacing:.16em;color:var(--dim);margin-top:14px;display:flex;align-items:center;gap:10px;text-transform:uppercase}
-.pc-badge{position:absolute;top:10px;right:12px;z-index:2;background:var(--red);color:#fff;font:700 8.5px var(--fm);letter-spacing:.14em;padding:5px 8px;text-transform:uppercase;animation:pulse 1.6s infinite;border:1px solid rgba(255,255,255,.25)}
-
-.panel{position:relative;overflow:hidden;max-height:0;transition:max-height .55s cubic-bezier(.25,.8,.25,1)}
-.panel-box{border:1px solid var(--line2);border-top:3px solid var(--red);background:var(--panel);margin-top:22px;scroll-margin-top:100px}
-.panel-head{display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;padding:20px 26px;border-bottom:1px solid var(--line)}
-.ph-k{font-family:var(--fm);font-size:9.5px;letter-spacing:.2em;color:var(--red-hi);display:block;margin-bottom:6px;text-transform:uppercase}
-.ph-name{font-family:var(--fh);font-weight:700;font-size:clamp(1.6rem,3vw,2.4rem);line-height:1;text-transform:uppercase}
-.ph-tags{font-family:var(--fm);font-size:10px;letter-spacing:.14em;color:var(--dim);margin-top:8px;text-transform:uppercase}
-.ph-r{font-family:var(--fm);font-size:10.5px;letter-spacing:.1em;color:var(--dim);align-self:center;text-transform:uppercase;display:flex;align-items:center;gap:9px}
-.ph-r i{color:var(--red-hi)}
-.p-body{padding:6px 26px 26px}
-
-.start-bar{margin-top:18px;border:1px solid var(--line2);background:linear-gradient(90deg,rgba(225,6,0,.12),rgba(225,6,0,.03) 55%,transparent);padding:16px 18px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-.btn-start{background:var(--red);color:#fff;font:700 13px var(--fm);letter-spacing:.14em;padding:18px 30px;display:inline-flex;gap:12px;align-items:center;text-transform:uppercase;transition:background .2s;flex:none}
-.btn-start:hover{background:var(--red-hi)}
-.btn-start:active{transform:scale(.98)}
-.sb-hint{font:500 9.5px/1.9 var(--fm);letter-spacing:.12em;color:var(--dim);text-transform:uppercase;flex:1;min-width:200px}
-.sb-hint b{color:var(--silver);font-weight:700}
-
-/* ============ КАЛЬКУЛЯТОР 1ПМ ============ */
-.calc{margin-top:14px;border:1px solid var(--line2);background:var(--bg2);padding:16px 18px;display:none}
-.calc.open{display:block}
-.calc-title{font:600 14px var(--fh);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:10px}
-.calc-title i{color:var(--red-hi)}
-.calc-warn{border:1px dashed rgba(225,6,0,.45);background:rgba(225,6,0,.06);padding:12px 14px;font-size:12.5px;color:var(--silver);line-height:1.65;margin-bottom:14px}
-.calc-warn b{color:var(--red-hi)}
-.calc-in-row{display:flex;gap:16px;align-items:flex-end;margin-bottom:12px;flex-wrap:wrap}
-.calc-lbl{font:700 9px var(--fm);letter-spacing:.18em;color:var(--dim);text-transform:uppercase;display:block;margin-bottom:6px}
-.calc-in{width:120px;background:var(--bg);border:1px solid var(--line2);color:var(--txt);font:700 26px var(--fh);padding:8px 12px;text-align:center;-webkit-appearance:none;appearance:none}
-.calc-in:focus{outline:0;border-color:var(--red)}
-.calc-row{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;color:var(--silver)}
-.calc-row:last-child{border-bottom:0}
-.calc-row .pct{font:500 10px var(--fm);letter-spacing:.08em;color:var(--dim);white-space:nowrap}
-.calc-row b{color:var(--txt);font:700 16px var(--fh);white-space:nowrap;font-variant-numeric:tabular-nums}
-.calc-note{margin-top:10px;font-size:12px;color:var(--dim);line-height:1.6}
-.calc-note b{color:var(--red-hi)}
-.calc-apply{margin-top:14px;width:100%;justify-content:center}
-
-/* ============ АТЛАС УПРАЖНЕНИЯ ============ */
-.atlas-toggle{display:inline-flex;gap:8px;align-items:center;font:700 9.5px var(--fm);letter-spacing:.14em;color:var(--red-hi);margin:2px 0 6px 52px;border-bottom:1px dotted rgba(255,59,42,.5);padding-bottom:2px;text-transform:uppercase;transition:color .2s}
-.atlas-toggle:hover{color:var(--txt)}
-.atlas-toggle i.at-down{transition:transform .25s}
-.atlas-toggle.open i.at-down{transform:rotate(180deg)}
-.atlas{margin:4px 0 8px 52px;border:1px solid var(--line2);background:var(--bg2);padding:14px}
-.atlas-imgs{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:12px}
-.atlas-imgs figure{margin:0;border:1px solid var(--line2);background:#000;overflow:hidden;position:relative}
-.atlas-imgs img{width:100%;aspect-ratio:3/4;object-fit:contain;display:block}
-.atlas-imgs figcaption{position:absolute;left:0;top:0;font:700 8px var(--fm);letter-spacing:.18em;background:rgba(0,0,0,.72);color:var(--red-hi);padding:4px 8px;text-transform:uppercase}
-.atlas-m p{margin:0 0 7px;font-size:13px;color:var(--silver);line-height:1.6}
-.atlas-m .am-main b{color:var(--red-hi)}
-.atlas-m .am-sec b{color:var(--txt)}
-.atlas-m .am-note{color:var(--silver)}
-.atlas-m .am-tip{border-top:1px dashed var(--line2);padding-top:9px;margin-top:10px;margin-bottom:0;color:var(--txt);font-weight:600;font-size:12.5px;display:flex;gap:8px;align-items:baseline}
-.atlas-m .am-tip i{color:var(--red-hi);flex:none;transform:translateY(1px)}
-/* тап по названию тренажёра в справочнике → атлас */
-.eq-row span[data-atlas-jump]{cursor:pointer;border-bottom:1px dotted rgba(255,59,42,.5);padding-bottom:2px;transition:color .2s}
-.eq-row span[data-atlas-jump]:hover{color:var(--red-hi)}
-.eq-row span[data-atlas-jump] i{font-size:11px;margin-left:6px;color:var(--red-hi);vertical-align:1px}
-.atlas-flash{animation:atlasFlash 1.7s ease}
-@keyframes atlasFlash{0%,55%{border-color:var(--red);box-shadow:0 0 0 1px rgba(225,6,0,.5),0 0 22px rgba(225,6,0,.2)}100%{border-color:var(--line2);box-shadow:none}}
-@media (prefers-reduced-motion:reduce){.atlas-flash{animation:none}}
-
-.block{border-top:1px solid var(--line);padding:18px 0 14px}
-.block:first-of-type{border-top:0;padding-top:14px}
-.b-head{display:grid;grid-template-columns:40px 1fr auto auto;gap:12px;align-items:center}
-.b-idx{font-family:var(--fm);font-size:11px;color:var(--red-hi);font-weight:700}
-.b-head h4{font-family:var(--fh);font-weight:600;font-size:clamp(1.15rem,1.8vw,1.45rem);letter-spacing:.03em;text-transform:uppercase;line-height:1.15}
-.b-eq-wrap{font-family:var(--fm);font-size:9px;letter-spacing:.14em;border:1px solid var(--line2);padding:5px 9px;color:var(--silver);white-space:nowrap;display:inline-flex;align-items:center;gap:8px;text-transform:uppercase;transition:border-color .2s}
-.b-eq-wrap:hover{border-color:var(--dim)}
-.b-eq-wrap.panatta::before{content:"";width:15px;height:9px;flex:none;background:linear-gradient(90deg,var(--it-g) 0 33.4%,var(--it-w) 33.4% 66.7%,var(--it-r) 66.7% 100%)}
-.b-eq-in{background:transparent;border:0;color:var(--silver);font:inherit;letter-spacing:inherit;text-transform:inherit;min-width:6ch;padding:0;transition:color .2s}
-.b-eq-in:hover{color:var(--txt)}
-.b-eq-in:focus{outline:0;color:var(--txt);border-bottom:1px solid var(--red)}
-.b-count{font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;color:var(--dim);white-space:nowrap;text-transform:uppercase}
-.b-note{font-size:12.5px;color:var(--dim);margin:8px 0 2px 52px;max-width:72ch}
-.b-note::before{content:"— "}
-
-.set{display:grid;grid-template-columns:26px 24px 190px 1fr;grid-template-areas:"n ck wr t" ". . note note";gap:2px 12px;padding:11px 0 9px;border-bottom:1px solid var(--line);align-items:center}
-.set:last-child{border-bottom:0}
-.s-n{grid-area:n;font-family:var(--fm);font-size:10.5px;color:var(--dim)}
-.ck{grid-area:ck;appearance:none;-webkit-appearance:none;width:24px;height:24px;border:1px solid var(--line2);background:var(--bg);display:grid;place-items:center;cursor:pointer;transition:.2s;position:relative;flex:none}
-.ck:hover{border-color:var(--red)}
-.ck:checked{background:var(--red);border-color:var(--red)}
-.ck:checked::after{content:"";width:11px;height:6px;border-left:2px solid #fff;border-bottom:2px solid #fff;transform:rotate(-45deg) translateY(-1px)}
-.set.done .s-n,.set.done .s-t,.set.done .s-wr{opacity:.45}
-.set.done .s-t{text-decoration:line-through;text-decoration-color:rgba(225,6,0,.6)}
-.s-wr{grid-area:wr;display:flex;align-items:baseline;gap:6px;white-space:nowrap}
-.s-wr i{font-style:normal;color:var(--dim)}
-.in-w,.in-r{background:transparent;border:0;border-bottom:1px solid transparent;color:var(--txt);font:600 20px/1.2 var(--fh);letter-spacing:.02em;padding:0 0 2px;min-width:3ch;transition:border-color .2s}
-.in-r{font-size:17px;color:var(--silver)}
-.in-w:hover,.in-r:hover{border-bottom-color:var(--line2)}
-.in-w:focus,.in-r:focus{outline:0;border-bottom-color:var(--red)}
-.s-t{grid-area:t;font-size:13px;color:var(--silver)}
-.s-hint{display:block;color:var(--red-hi);font-size:11.5px;font-weight:600;font-style:normal;margin-top:2px}
-.s-note-in{grid-area:note;background:transparent;border:0;border-bottom:1px dashed var(--line2);color:var(--silver);font:500 11.5px/1.5 var(--fm);padding:5px 0 4px;width:100%;transition:border-color .2s}
-.s-note-in::placeholder{color:#54575d}
-.s-note-in:focus{outline:0;border-bottom-color:var(--red);border-bottom-style:solid}
-.alt-grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);margin-top:14px}
-.alt{background:var(--bg2);padding:16px 18px}
-.alt h5{font-family:var(--fm);font-size:10px;letter-spacing:.16em;color:var(--red-hi);margin-bottom:6px;font-weight:700;text-transform:uppercase}
-.alt .set{grid-template-columns:26px 24px 160px 1fr}
-.p-note{margin-top:22px;border:1px dashed rgba(225,6,0,.45);background:rgba(225,6,0,.06);padding:15px 18px;display:flex;gap:14px;align-items:flex-start}
-.p-note>i{color:var(--red-hi);font-size:19px;flex:none}
-.p-note b{color:var(--red-hi)}
-.p-note div{font-size:13px;color:var(--silver)}
-.p-note a{color:var(--red-hi);border-bottom:1px solid rgba(255,59,42,.5);white-space:nowrap}
-.p-note a:hover{border-bottom-color:var(--red-hi)}
-
-.track-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:20px;padding-top:16px;border-top:1px solid var(--line)}
-.tb-label{font:700 10px var(--fm);letter-spacing:.18em;color:var(--dim);text-transform:uppercase;flex:none}
-.tb-count{color:var(--red-hi)}
-.tb-track{flex:1;min-width:120px;height:3px;background:var(--line);position:relative}
-.tb-fill{position:absolute;top:0;bottom:0;left:0;width:0;background:var(--red);transition:width .35s}
-.gy-open{display:inline-flex;gap:8px;align-items:center;font:700 10px var(--fm);letter-spacing:.14em;color:var(--red-hi);border:1px solid rgba(255,59,42,.45);padding:10px 14px;text-transform:uppercase;transition:.2s;flex:none}
-.gy-open:hover{background:var(--red);color:#fff;border-color:var(--red)}
-.track-actions{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap}
-.btn-fin{background:var(--red);color:#fff;font:700 11px var(--fm);letter-spacing:.12em;padding:14px 20px;display:inline-flex;gap:10px;align-items:center;text-transform:uppercase;transition:background .2s}
-.btn-fin:hover{background:var(--red-hi)}
-.btn-fin.ready{animation:pulse 1.5s infinite}
-.btn-reset{border:1px solid var(--line2);color:var(--dim);font:700 10px var(--fm);letter-spacing:.14em;padding:13px 18px;text-transform:uppercase;transition:.2s}
-.btn-reset:hover{color:var(--silver);border-color:var(--dim)}
-.btn-reset.arm{border-color:var(--red);color:var(--red-hi)}
-
-.iron-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
-.duo{position:relative;overflow:hidden;border:1px solid var(--line2);aspect-ratio:4/3;background:var(--panel)}
-.duo svg{position:absolute;inset:0;width:100%;height:100%;display:block;z-index:0}
-.duo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;filter:grayscale(1) contrast(1.18) brightness(.82);transition:transform .6s;will-change:transform}
-.duo:hover img{transform:scale(1.05)}
-.duo::after{content:"";position:absolute;inset:0;z-index:2;background:linear-gradient(165deg,rgba(225,6,0,.32),rgba(10,10,11,.6) 75%);pointer-events:none}
-.duo-cap{position:absolute;left:0;right:0;bottom:0;z-index:3;display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(8,8,9,.82);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border-top:1px solid var(--line);font-family:var(--fm);font-size:9px;letter-spacing:.14em;color:var(--silver);text-transform:uppercase}
-.duo-cap b{color:var(--red-hi);font-weight:400}
-
-.sup-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.sup-card{border:1px solid var(--line2);background:var(--panel);padding:20px 22px 14px}
-.sc-head{display:flex;align-items:center;gap:12px;padding-bottom:13px;border-bottom:1px solid var(--line)}
-.sc-head i{color:var(--red-hi);font-size:19px;flex:none}
-.sc-head h3{font:600 15px var(--fh);letter-spacing:.12em;text-transform:uppercase;flex:1}
-.sc-tag{font:700 8.5px var(--fm);letter-spacing:.2em;color:var(--dim);text-transform:uppercase;border:1px solid var(--line2);padding:4px 8px;flex:none}
-.sup-row{display:flex;gap:13px;padding:12px 0;border-bottom:1px solid var(--line);align-items:baseline}
-.sup-row:last-child{border-bottom:0;padding-bottom:14px}
-.sr-n{font:700 10.5px var(--fm);color:var(--red-hi);flex:none;width:24px}
-.sr-main{flex:1}
-.sr-main b{display:block;font:600 14.5px var(--fb);letter-spacing:.02em}
-.sr-main span{display:block;color:var(--dim);font-size:12px;margin-top:2px}
-.sr-opt{flex:none;font:700 8.5px var(--fm);letter-spacing:.18em;color:var(--red-hi);border:1px solid rgba(255,59,42,.5);padding:4px 7px;text-transform:uppercase;align-self:center}
-.sup-card:last-child{grid-column:1/-1}
-.sup-base{margin-top:14px;border:1px dashed var(--line2);padding:14px 18px;display:flex;gap:12px;align-items:center;font:600 11.5px var(--fm);letter-spacing:.1em;color:var(--silver);text-transform:uppercase}
-.sup-base i{color:var(--red-hi);font-size:16px;flex:none}
-
-.nut-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
-.nut-tabs .gy-chip{padding:12px 20px;font-size:12px}
-.nut-wrap{border:1px solid var(--line2);background:var(--panel);padding:20px 22px 22px}
-.nut-calc{display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center;padding-bottom:18px;border-bottom:1px solid var(--line)}
-.nut-w{display:flex;flex-direction:column;gap:8px}
-.nut-w label{font:700 9px var(--fm);letter-spacing:.2em;color:var(--dim);text-transform:uppercase}
-.nut-w-in{width:120px;background:var(--bg);border:1px solid var(--line2);color:var(--txt);font:700 26px var(--fh);padding:10px 12px;text-align:center;-webkit-appearance:none;appearance:none}
-.nut-w-in:focus{outline:0;border-color:var(--red)}
-.nut-w small{font:500 8.5px var(--fm);letter-spacing:.14em;color:var(--dim);text-transform:uppercase;line-height:1.6}
-.macros{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
-.macro{background:var(--bg2);padding:14px 12px;text-align:center}
-.macro b{display:block;font:700 clamp(1.3rem,3vw,2rem)/1.15 var(--fh);font-variant-numeric:tabular-nums}
-.macro b i{font:700 11px var(--fm);color:var(--dim);font-style:normal;margin-left:3px}
-.macro span{font:600 8.5px var(--fm);letter-spacing:.16em;color:var(--dim);text-transform:uppercase}
-.macro.p b{color:var(--red-hi)}
-.nut-kcal{margin-top:12px;font:500 10px/1.8 var(--fm);letter-spacing:.08em;color:var(--dim);text-transform:uppercase}
-.nut-kcal b{color:var(--silver)}
-.nut-notes{margin-top:14px;display:flex;flex-direction:column;gap:8px}
-.nut-note{display:flex;gap:10px;align-items:baseline;font-size:13px;color:var(--silver)}
-.nut-note i{color:var(--red-hi);flex:none;transform:translateY(1px)}
-.nut-goal-note{margin-top:16px;border-left:3px solid var(--red);background:rgba(225,6,0,.06);padding:13px 16px;font-size:13.5px;color:var(--silver);line-height:1.7}
-.nut-goal-note b{color:var(--txt)}
-.menu-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
-.meal{border:1px solid var(--line2);background:var(--panel);padding:16px 18px}
-.meal-k{display:flex;align-items:center;gap:10px;font:700 11.5px var(--fm);letter-spacing:.2em;color:var(--red-hi);text-transform:uppercase;margin-bottom:8px}
-.meal-line{font-size:14px;font-weight:600;color:var(--txt);line-height:1.55}
-.meal-macros{margin-top:10px;font:500 10.5px/1.8 var(--fm);letter-spacing:.05em;color:var(--dim)}
-.meal-macros b{color:var(--silver);font-weight:700}
-.meal.wide{grid-column:1/-1}
-.meal.total{background:linear-gradient(90deg,rgba(225,6,0,.1),transparent 70%);border-color:rgba(255,59,42,.4)}
-.meal.total .meal-line{font:700 15px var(--fh);letter-spacing:.04em;text-transform:uppercase}
-.rec-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
-.rec{border:1px solid var(--line2);background:var(--bg2);padding:16px 18px}
-.rec h4{font:600 15px var(--fh);letter-spacing:.08em;text-transform:uppercase;display:flex;gap:10px;align-items:center;margin-bottom:8px}
-.rec h4 i{color:var(--red-hi)}
-.rec p{font-size:13px;color:var(--silver);line-height:1.65}
-.rec p b{color:var(--txt)}
-.q-block{margin-top:14px;border:1px solid rgba(255,59,42,.45);border-left:4px solid var(--red);background:linear-gradient(90deg,rgba(225,6,0,.09),rgba(225,6,0,.02) 60%);padding:18px 20px}
-.q-block p{font-size:14px;line-height:1.75;color:var(--silver)}
-.q-block p b{color:var(--txt)}
-.q-block .q-sig{margin-top:12px;font:700 9px var(--fm);letter-spacing:.22em;color:var(--red-hi);text-transform:uppercase}
-
-.gloss-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-.gloss{border:1px solid var(--line2);background:var(--panel);padding:16px 18px}
-.gloss h4{font:600 15px var(--fh);letter-spacing:.08em;text-transform:uppercase;display:flex;gap:10px;align-items:baseline;margin-bottom:7px}
-.gloss h4 .g-term{color:var(--red-hi)}
-.gloss p{font-size:13px;color:var(--silver);line-height:1.65}
-.gloss p b{color:var(--txt)}
-.gloss.wide{grid-column:1/-1}
-.eq-links{margin-top:14px;border:1px solid var(--line2);background:var(--panel);padding:16px 18px}
-.eq-links h3{font:600 15px var(--fh);letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px;display:flex;align-items:center;gap:10px}
-.eq-links h3 i{color:var(--red-hi)}
-.eq-links .dat-p{margin-bottom:6px}
-.eq-row{display:flex;justify-content:space-between;align-items:baseline;gap:14px;padding:10px 0;border-bottom:1px solid var(--line)}
-.eq-row:last-child{border-bottom:0}
-.eq-row span{font-size:13.5px;font-weight:600;color:var(--txt)}
-.eq-row a{font:500 10.5px var(--fm);letter-spacing:.1em;color:var(--red-hi);border-bottom:1px solid rgba(255,59,42,.4);padding-bottom:2px;white-space:nowrap;text-transform:uppercase;flex:none}
-.eq-row a:hover{border-bottom-color:var(--red-hi)}
-@media(max-width:700px){.gloss-grid{grid-template-columns:1fr}}
-
-.big-marquee{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:24px 0;overflow:hidden}
-.bm-group{display:flex;align-items:center}
-.legm{display:flex;align-items:baseline;gap:12px;padding:0 12px;flex:none}
-.lm-name{font-family:var(--fh);font-weight:700;font-size:clamp(2.2rem,5vw,4.2rem);line-height:1;text-transform:uppercase;letter-spacing:.02em}
-.lm-name.st{color:transparent;-webkit-text-stroke:2px var(--silver)}
-.lm-rec{font-family:var(--fm);font-size:10px;letter-spacing:.22em;color:var(--red-hi);text-transform:uppercase;white-space:nowrap}
-.dm{width:12px;height:12px;background:var(--red);transform:rotate(45deg);margin:0 22px;flex:none}
-
-.contact-grid{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:1px;background:var(--line);border:1px solid var(--line)}
-.cc{background:var(--bg);padding:22px}
-.cc-label{display:flex;align-items:center;gap:10px;font-family:var(--fm);font-size:9.5px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase;margin-bottom:12px}
-.cc-label i{color:var(--red-hi);font-size:15px}
-.cc-val{font-weight:700;font-size:16px;letter-spacing:.01em}
-.cc-val.mono{font-size:13px;word-break:break-all;line-height:1.6;font-weight:500}
-.cc-val a{border-bottom:1px solid transparent;transition:.2s}
-.cc-val a:hover{color:var(--red-hi);border-bottom-color:var(--red-hi)}
-.copy-btn{font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;color:var(--red-hi);margin-top:12px;display:inline-flex;gap:7px;align-items:center;border-bottom:1px solid transparent;padding-bottom:2px;text-transform:uppercase}
-.copy-btn:hover{border-bottom-color:var(--red-hi)}
-.contact-msg{margin-top:14px;border:1px solid var(--line2);background:var(--panel);padding:20px 22px}
-.cm-ta{width:100%;min-height:96px;background:var(--bg);border:1px solid var(--line2);color:var(--txt);font:500 13px/1.6 var(--fb);padding:12px;resize:vertical;-webkit-appearance:none;appearance:none}
-.cm-ta::placeholder{color:#54575d}
-.cm-ta:focus{outline:0;border-color:var(--red)}
-.cm-foot{display:flex;gap:14px;align-items:center;margin-top:12px;flex-wrap:wrap}
-.cm-hint{font:500 9px var(--fm);letter-spacing:.12em;color:var(--dim);text-transform:uppercase}
-
-.tri-line{height:4px;background:linear-gradient(90deg,var(--it-g) 0 33.4%,var(--it-w) 33.4% 66.7%,var(--it-r) 66.7% 100%)}
-.tape{height:8px;background:repeating-linear-gradient(-45deg,var(--red) 0 12px,var(--bg) 12px 24px)}
-footer{background:var(--bg2)}
-.foot-grid{display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap;padding:34px 0 26px}
-.foot-brand p{color:var(--dim);font-size:12.5px;margin-top:12px;max-width:40ch}
-.foot-italy{display:flex;align-items:center;gap:12px;font-family:var(--fm);font-size:10px;letter-spacing:.2em;color:var(--dim);text-transform:uppercase}
-.foot-bottom{border-top:1px solid var(--line);padding:16px 0;display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;color:var(--dim)}
-#toTop{display:inline-flex;gap:8px;align-items:center;font-family:var(--fm);font-size:9.5px;letter-spacing:.14em;color:var(--silver);transition:color .2s;text-transform:uppercase}
-#toTop:hover{color:var(--red-hi)}
-
-#toasts{position:fixed;bottom:22px;left:22px;z-index:3000;display:flex;flex-direction:column;gap:10px}
-.toast{display:flex;align-items:center;gap:12px;background:#141416;border:1px solid var(--line2);border-left:3px solid var(--red);padding:13px 18px;font-family:var(--fm);font-size:11px;letter-spacing:.04em;color:var(--txt);transform:translateX(-16px);opacity:0;transition:.35s;max-width:360px}
-.toast.show{transform:none;opacity:1}
-.toast i{color:var(--red-hi);font-size:16px;flex:none}
-
-.gym{position:fixed;inset:0;z-index:2500;background:radial-gradient(80% 55% at 50% 28%,rgba(225,6,0,.1),transparent 70%),var(--bg);display:none;flex-direction:column}
-.gym.open{display:flex}
-.gy-top{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:16px clamp(16px,4vw,32px);border-bottom:1px solid var(--line)}
-.gy-prog{flex:1;font:700 10.5px var(--fm);letter-spacing:.18em;color:var(--dim);text-transform:uppercase}
-.gy-clock{font:700 15px var(--fm);letter-spacing:.08em;color:var(--red-hi);font-variant-numeric:tabular-nums;flex:none}
-.gy-close{width:42px;height:42px;border:1px solid var(--line2);display:grid;place-items:center;font-size:19px;color:var(--silver);transition:.2s;flex:none}
-.gy-close:hover{border-color:var(--red);color:var(--red-hi)}
-.gy-bar{height:3px;background:var(--line);flex:none}
-.gy-fill{display:block;height:100%;width:0;background:var(--red);transition:width .35s}
-.gy-mid{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:14px;padding:24px 20px;overflow:auto}
-.gy-blk{font:600 clamp(1rem,2.6vw,1.5rem) var(--fh);letter-spacing:.12em;text-transform:uppercase;color:var(--silver)}
-.gy-eqline{font:700 10px var(--fm);letter-spacing:.24em;color:var(--red-hi);text-transform:uppercase;margin-top:-6px}
-.gy-wr{display:flex;align-items:baseline;gap:clamp(8px,2vw,16px)}
-.gy-w,.gy-r{background:transparent;border:0;border-bottom:2px dashed transparent;color:var(--txt);text-align:center;padding:0 4px 6px;transition:border-color .2s}
-.gy-w{font:700 clamp(4.2rem,19vw,9.5rem)/0.9 var(--fh);letter-spacing:.01em}
-.gy-r{font:700 clamp(3.4rem,15vw,7.5rem)/0.9 var(--fh);color:var(--silver)}
-.gy-x{font:300 clamp(1.8rem,7vw,3.4rem)/1 var(--fh);color:var(--silver);opacity:.5;padding:0 2px}
-.gy-w:focus,.gy-r:focus{outline:0;border-bottom-color:var(--red)}
-.gy-edit-hint{font:500 8.5px var(--fm);letter-spacing:.22em;color:#5a5d63;text-transform:uppercase;margin-top:-4px}
-.gy-tech{color:var(--dim);font-size:clamp(.85rem,2vw,1rem);max-width:40ch}
-.gy-note{width:min(440px,88vw);background:transparent;border:0;border-bottom:1px dashed var(--line2);color:var(--silver);font:500 12px/1.5 var(--fm);padding:7px 0;text-align:center}
-.gy-note::placeholder{color:#54575d}
-.gy-note:focus{outline:0;border-bottom-color:var(--red);border-bottom-style:solid}
-.gy-done{background:var(--red);color:#fff;font:700 clamp(.85rem,2vw,1rem) var(--fm);letter-spacing:.16em;padding:18px 36px;display:inline-flex;gap:12px;align-items:center;text-transform:uppercase;margin-top:8px;transition:.15s}
-.gy-done:hover{background:var(--red-hi)}
-.gy-done:active{transform:scale(.96)}
-.gy-done.ghosty{background:transparent;border:1px solid var(--line2);color:var(--txt)}
-.gy-done.ghosty:hover{border-color:var(--dim);background:transparent}
-.gy-sub{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;justify-content:center}
-.gy-ghost{border:1px solid var(--line2);color:var(--dim);font:700 10px var(--fm);letter-spacing:.14em;padding:12px 16px;display:inline-flex;gap:8px;align-items:center;text-transform:uppercase;transition:.2s}
-.gy-ghost:hover{color:var(--txt);border-color:var(--dim)}
-.gy-ghost:disabled{opacity:.3;cursor:default}
-.gy-rest-k{display:inline-flex;gap:10px;align-items:center;font:700 11px var(--fm);letter-spacing:.26em;color:var(--red-hi);text-transform:uppercase}
-.gy-timer{font:700 clamp(4.8rem,27vw,12rem)/1 var(--fm);color:var(--txt);cursor:pointer;user-select:none;-webkit-user-select:none;padding:10px 12px;transition:color .2s;font-variant-numeric:tabular-nums}
-.gy-timer:hover{color:var(--red-hi)}
-.gy-timer.zero{color:var(--red-hi);animation:pulse 1s infinite}
-.gy-tap{font:500 9.5px var(--fm);letter-spacing:.24em;color:var(--dim);text-transform:uppercase}
-.gy-next{display:inline-flex;align-items:center;gap:8px;font:500 10.5px var(--fm);letter-spacing:.14em;color:var(--dim);text-transform:uppercase;max-width:92vw;text-align:center}
-.gy-next i{color:var(--red-hi);flex:none}
-.gy-next b{color:var(--txt);font-weight:700;white-space:nowrap}
-.gy-presets{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-.gy-chip{font:700 11px var(--fm);letter-spacing:.1em;border:1px solid var(--line2);color:var(--silver);padding:10px 16px;transition:.2s}
-.gy-chip:hover{border-color:var(--dim)}
-.gy-chip.on{background:var(--red);border-color:var(--red);color:#fff}
-.gy-fin-k{font:700 10px var(--fm);letter-spacing:.26em;color:var(--red-hi);text-transform:uppercase}
-.gy-fin{font:700 clamp(2.4rem,8.5vw,4.6rem)/1 var(--fh);text-transform:uppercase}
-.gy-fin em{font-style:normal;color:var(--red)}
-.gy-fin-p{color:var(--dim);font-size:13.5px;max-width:44ch}
-.gy-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);width:min(560px,94vw)}
-.gy-stat{background:var(--panel);padding:12px 10px 13px;text-align:center}
-.gy-stat b{display:block;font:700 clamp(1.15rem,3.8vw,1.8rem)/1.15 var(--fh);white-space:nowrap;font-variant-numeric:tabular-nums}
-.gy-stat b .gy-kg{font:700 10px var(--fm);color:var(--dim);margin-left:4px;font-style:normal}
-.gy-stat span{font:600 8px var(--fm);letter-spacing:.16em;color:var(--dim);text-transform:uppercase}
-.gy-ton{width:min(560px,94vw);border:1px solid var(--line);max-height:190px;overflow:auto}
-.gy-ton-h{font:700 8.5px var(--fm);letter-spacing:.22em;color:var(--dim);text-transform:uppercase;padding:9px 14px 7px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel)}
-.gy-ton-row{display:flex;justify-content:space-between;gap:14px;padding:7px 14px;border-bottom:1px solid var(--line);font:500 11px var(--fm);color:var(--silver)}
-.gy-ton-row:last-child{border-bottom:0}
-.gy-ton-row b{color:var(--txt);font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
-
-.report{position:fixed;inset:0;z-index:2600;background:rgba(5,5,6,.9);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);display:none;padding:3vh 4vw}
-.report.open{display:grid;place-items:center}
-.rp-box{width:min(740px,100%);max-height:94vh;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--line2);border-top:3px solid var(--red)}
-.rp-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 20px;border-bottom:1px solid var(--line)}
-.rp-title{font:700 10px var(--fm);letter-spacing:.22em;color:var(--red-hi);text-transform:uppercase}
-.rp-pre{margin:0;padding:16px 20px;overflow:auto;font:500 12px/1.75 var(--fm);color:var(--silver);white-space:pre-wrap;flex:1}
-.rp-foot{display:flex;gap:10px;padding:14px 20px;border-top:1px solid var(--line);flex-wrap:wrap}
-.rp-foot .btn-fin{flex:1;justify-content:center}
-
-.dat-body{padding:16px 20px 20px;overflow:auto;display:flex;flex-direction:column;gap:12px}
-.dat-status{font:700 10.5px/1.7 var(--fm);letter-spacing:.12em;text-transform:uppercase;border:1px dashed var(--line2);padding:10px 12px;color:var(--silver)}
-.dat-status.bad{border-color:rgba(255,59,42,.55);color:var(--red-hi)}
-.dat-p{font-size:12.5px;color:var(--dim)}
-.dat-label{font:700 8.5px var(--fm);letter-spacing:.22em;color:var(--dim);text-transform:uppercase}
-.dat-ta{width:100%;min-height:84px;background:var(--bg);border:1px solid var(--line2);color:var(--silver);font:500 10.5px/1.6 var(--fm);padding:10px;resize:vertical;-webkit-appearance:none;appearance:none}
-.dat-ta:focus{outline:0;border-color:var(--red)}
-.dat-in{width:100%;background:var(--bg);border:1px solid var(--line2);color:var(--txt);font:600 13px var(--fb);padding:11px 12px;-webkit-appearance:none;appearance:none}
-.dat-in::placeholder{color:#54575d;font-weight:500}
-.dat-in:focus{outline:0;border-color:var(--red)}
-.dat-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.dat-warn{font:500 10px var(--fm);letter-spacing:.08em;color:var(--dim)}
-.pl-blk{border:1px solid var(--line2);background:var(--bg2);padding:12px 14px;display:flex;flex-direction:column;gap:10px}
-.pl-top{display:flex;gap:8px}
-.pl-top .dat-in{flex:1}
-.pl-row3{display:grid;grid-template-columns:1.4fr .6fr;gap:8px}
-.pl-sets{display:flex;flex-direction:column;gap:8px}
-.pl-setrow{display:grid;grid-template-columns:72px 12px 72px 1fr 34px;gap:6px;align-items:center}
-.pl-setrow>i{color:var(--dim);font-style:normal;text-align:center}
-.pl-setrow .dat-in{padding:9px 10px;font-size:12.5px}
-.pl-del{width:34px;height:34px;border:1px solid var(--line2);display:grid;place-items:center;color:var(--dim);flex:none;transition:.2s}
-.pl-del:hover{color:var(--red-hi);border-color:var(--red)}
-
-@media(max-width:1020px){
-  .hero-grid{grid-template-columns:1fr}
-  .contact-grid{grid-template-columns:1fr 1fr}
-}
-@media(max-width:980px){
-  .nav-links{display:none}
-  .burger{display:grid}
-  .flag{display:none}
-}
-@media(max-width:700px){
-  .hero-strip{grid-template-columns:1fr}
-  .hstrip{border-left:0;border-top:1px solid var(--line)}
-  .hstrip:first-child{border-top:0}
-  .b-head{grid-template-columns:30px 1fr;row-gap:8px}
-  .b-eq-wrap{justify-self:start}
-  .b-count{display:none}
-  .b-note{margin-left:42px}
-  .atlas-toggle,.atlas{margin-left:42px}
-  .atlas-imgs{grid-template-columns:1fr}
-  .set{grid-template-columns:22px 24px 1fr;grid-template-areas:"n ck" "n wr" "n t" ". note";gap:3px 10px}
-  .alt .set{grid-template-columns:22px 24px 1fr;grid-template-areas:"n ck" "n wr" "n t" ". note"}
-  .s-t{font-size:12.5px}
-  .alt-grid{grid-template-columns:1fr}
-  .iron-grid{grid-template-columns:1fr}
-  .sup-grid{grid-template-columns:1fr}
-  .nut-calc{grid-template-columns:1fr}
-  .menu-grid,.rec-grid{grid-template-columns:1fr}
-  .contact-grid{grid-template-columns:1fr}
-  .p-body{padding:4px 16px 18px}
-  .panel-head{padding:16px 16px}
-  .btn-start{width:100%;justify-content:center}
-  .gy-sub{flex-direction:column;width:min(320px,80vw)}
-  .gy-sub .gy-ghost{justify-content:center}
-  .pl-setrow{grid-template-columns:60px 10px 60px 1fr 30px}
-  .pc-grid{grid-template-columns:1fr}
-}
-@media (prefers-reduced-motion:reduce){
-  .ticker-track,.bm-track{animation:none}
-  html{scroll-behavior:auto}
-  .js [data-reveal],.js .hr{transition:none;animation:none;opacity:1;transform:none}
-  #splash{display:none}
-}
+/* ---------- gate · ДОСТУП ---------- */
+#gate{position:fixed;inset:0;background:#050506;display:flex;align-items:center;justify-content:center;padding:22px;z-index:50}
+#gate .card{width:100%;max-width:420px;background:#141416;border:1px solid #26262A;border-top:3px solid var(--red);
+            border-radius:3px;padding:20px 18px 22px}
+#gate .gt{color:var(--red);font-size:12px;font-weight:800;letter-spacing:3px;margin-bottom:14px}
+#gate .gl{color:var(--dim);font-size:10px;letter-spacing:2px;margin-bottom:8px}
+#gate .gb{color:var(--white);font-size:12.5px;margin-bottom:16px}
+#gate .gi{width:100%;background:#0A0A0B;border:1px solid var(--red);border-radius:2px;color:var(--white);
+          font-family:inherit;font-size:13px;padding:12px 12px;outline:none;margin-bottom:14px}
+#gate .gi::placeholder{color:#45454B}
+#gate #bReq{display:inline-flex;align-items:center;gap:9px;background:var(--red);color:#fff;border:none;
+        border-radius:2px;font-family:inherit;font-weight:800;font-size:13px;letter-spacing:2px;padding:13px 22px;cursor:pointer}
+#gate #bReq:active{background:var(--red-deep)}
+#gate .gmsg{color:var(--gray);font-size:11px;margin-top:12px}
+#gate .gem{margin:0 auto 16px}
+.hidden{display:none!important}
+.scan{position:fixed;inset:0;pointer-events:none;z-index:40;
+      background:repeating-linear-gradient(0deg,rgba(255,255,255,.012) 0 1px,transparent 1px 3px)}
 </style>
 </head>
-<body id="top">
+<body>
+<div class="scan"></div>
 
-<div id="splash" aria-hidden="true">
-  <div class="sp-in">
-    <span class="sp-mark"></span>
-    <span class="sp-name">ARES <em>GYM</em></span>
-    <span class="sp-sub">Power · Disciplina</span>
-    <span class="sp-bar"><i></i></span>
-    <span class="sp-cap">Жим · Тяга · Ноги</span>
+<!-- гейт доступа · ДОСТУП -->
+<div id="gate" class="hidden">
+  <div class="card">
+    <div class="gem"></div>
+    <div class="gt">ARES CODE · ДОСТУП</div>
+    <div class="gl">ДОСТУП ОГРАНИЧЕН</div>
+    <div class="gb">Это приватный терминал. Отправь заявку — владелец получит её в Telegram и откроет доступ кнопкой ✅.</div>
+    <button id="bReq">🔒 ЗАПРОСИТЬ ДОСТУП</button>
+    <div class="gmsg" id="gateMsg"></div>
   </div>
 </div>
 
-<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
-  <defs>
-    <linearGradient id="gBar" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#eceef1"/><stop offset=".5" stop-color="#a7adb5"/><stop offset="1" stop-color="#565b62"/>
-    </linearGradient>
-    <radialGradient id="gPlate" cx=".35" cy=".35" r=".85">
-      <stop offset="0" stop-color="#ff6a4a"/><stop offset=".45" stop-color="#e10600"/><stop offset="1" stop-color="#7a050b"/>
-    </radialGradient>
-    <linearGradient id="gPad" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#e01527"/><stop offset=".55" stop-color="#a30d18"/><stop offset="1" stop-color="#5c060d"/>
-    </linearGradient>
-    <linearGradient id="gPost" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#232327"/><stop offset="1" stop-color="#121215"/>
-    </linearGradient>
-    <linearGradient id="gSpot" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ff3b2a" stop-opacity=".14"/><stop offset="1" stop-color="#ff3b2a" stop-opacity="0"/>
-    </linearGradient>
-    <radialGradient id="gGlow" cx=".5" cy=".5" r=".5">
-      <stop offset="0" stop-color="#e10600" stop-opacity=".16"/><stop offset="1" stop-color="#e10600" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-</svg>
+<div id="app" class="hidden">
+  <div id="hud">
+    <span class="brand">ARES<b>◆</b>CODE</span><span class="sep">│</span>
+    <span id="hudSys">CPU —% · RAM —% · DISK —%</span><span class="sep">│</span>
+    <span id="hudTok">TOK — | REQ —</span><span class="sep">│</span>
+    <span id="hudSt" class="dim">—</span><span class="sep">│</span>
+    <span id="hudPow">⚡AUTO</span>
+  </div>
 
-<div class="ticker" aria-hidden="true">
-  <div class="ticker-track">
-    <div class="tg">
-      <span>ARES GYM — Силовой клуб</span><i class="tsep"></i>
-      <span>PANATTA · MADE IN ITALY</span><i class="tsep"></i>
-      <span>Жим · Тяга · Ноги</span><i class="tsep"></i>
-      <span>Вес × Повторы × Техника</span><i class="tsep"></i>
-      <span>Сталь · Дисциплина · Результат</span><i class="tsep"></i>
+  <div id="welcome">
+    <div class="gem"></div>
+    <div class="wTitle">ARES <b>CODE</b></div>
+    <div class="wSub">AGENT · TERMINAL</div>
+    <div class="wMeta" id="wModel">ARES CODE V1</div>
+    <div class="wMeta" id="wDir">workspace/<b>root</b></div>
+    <div class="divider"></div>
+    <div class="wTips">
+      опиши задачу — агент сам: <b>план → код → запуск → фикс → отчёт</b><br>
+      вопросы — просто спроси · <b>!команда</b> — прямая shell<br>
+      плагины: «поставь плагин https://github.com/...» · 📦 архив · ❄ холод
     </div>
-    <div class="tg">
-      <span>ARES GYM — Силовой клуб</span><i class="tsep"></i>
-      <span>PANATTA · MADE IN ITALY</span><i class="tsep"></i>
-      <span>Жим · Тяга · Ноги</span><i class="tsep"></i>
-      <span>Вес × Повторы × Техника</span><i class="tsep"></i>
-      <span>Сталь · Дисциплина · Результат</span><i class="tsep"></i>
-    </div>
+  </div>
+
+  <div id="term"></div>
+
+  <form id="prompt" autocomplete="off">
+    <span class="ps1" id="ps1">◆ &gt;</span>
+    <input id="inp" placeholder="опиши задачу или спроси…">
+    <button id="bSend" type="submit">⏎</button>
+  </form>
+
+  <div id="quick">
+    <button id="bArch">📦 АРХИВ</button>
+    <button id="bCold">❄ ХОЛОД</button>
+    <button id="bClean">🧹 УБОРКА</button>
+    <button id="bStat">⚡ СТАТУС</button>
   </div>
 </div>
 
-<nav class="nav" id="nav">
-  <div class="container nav-in">
-    <a class="logo" href="#top" aria-label="ARES GYM — наверх">
-      <span class="logo-mark"></span>
-      <span><span class="logo-name">ARES <em>GYM</em></span><span class="logo-sub">POWER · DISCIPLINA</span></span>
-    </a>
-    <div class="nav-links">
-      <a href="#programs">ПРОГРАММЫ</a>
-      <a href="#iron">ЖЕЛЕЗО</a>
-      <a href="#support">ПОДДЕРЖКА</a>
-      <a href="#nutrition">ПИТАНИЕ</a>
-      <a href="#glossary">СПРАВОЧНИК</a>
-      <a href="#contacts">КОНТАКТЫ</a>
-    </div>
-    <div class="nav-right">
-      <a class="tg-ico" href="https://t.me/RBares1337" target="_blank" rel="noopener" aria-label="Telegram"><i class="ri-telegram-line"></i></a>
-      <a class="btn-red" href="#programs">ПРОГРАММЫ <i class="ri-arrow-down-line"></i></a>
-      <button class="burger" id="burger" aria-label="Открыть меню" aria-expanded="false"><i class="ri-menu-3-line"></i></button>
-    </div>
-  </div>
-</nav>
-
-<div class="mmenu" id="mmenu">
-  <button class="m-close" aria-label="Закрыть меню"><i class="ri-close-line"></i></button>
-  <span class="m-k mono">ARES GYM — МЕНЮ</span>
-  <a href="#programs">Программы</a>
-  <a href="#iron">Железо</a>
-  <a href="#support">Поддержка</a>
-  <a href="#nutrition">Питание</a>
-  <a href="#glossary">Справочник</a>
-  <a href="#contacts">Контакты</a>
-  <span class="m-f"><span class="tri"></span> PANATTA · MADE IN ITALY</span>
-</div>
-
-<main>
-  <header class="hero">
-    <span class="flag l" aria-hidden="true"></span>
-    <span class="flag r" aria-hidden="true"></span>
-    <div class="container">
-      <div class="hero-grid">
-        <div class="hero-left">
-          <p class="h-meta hr" style="--hd:.05s"><span class="sq"></span> СИЛОВОЙ КЛУБ · ЖЕЛЕЗО PANATTA · ITALIA</p>
-          <h1 class="h-display">
-            <span class="hr" style="--hd:.1s;display:block">ARES</span>
-            <span class="hr stroke" style="--hd:.2s;display:block">GYM<span class="dot">.</span></span>
-          </h1>
-          <p class="h-sub hr" style="--hd:.34s">Клуб, где сила измеряется килограммами, а форма — зеркалом. Никакой воды: готовые программы с точными весами, повторами и техникой — плюс конструктор своего плана.</p>
-
-          <div class="defs hr" style="--hd:.46s">
-            <div class="def">
-              <span class="d-idx">01</span>
-              <div>
-                <h3>Пауэрлифтинг</h3>
-                <p>Три движения — один максимум. Жим, присед, становая: сила, измеренная в килограммах. Здесь не угадывают — здесь знают.</p>
-              </div>
-            </div>
-            <div class="def">
-              <span class="d-idx">02</span>
-              <div>
-                <h3>Бодибилдинг</h3>
-                <p>Вес — инструмент, тело — результат. Мышцы, пропорции, качество формы. Строится медленно — не теряется никогда.</p>
-              </div>
-            </div>
-            <div class="def hyb">
-              <span class="d-idx">03</span>
-              <div>
-                <h3>Гибрид <em>ARES</em></h3>
-                <p>Программа не делает акцент на чём-то одном. Это гибрид, который берёт лучшее из обоих миров: сила пауэрлифтинга + объём бодибилдинга.</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="hr" style="--hd:.58s">
-            <div class="cta-row">
-              <a class="btn-red" href="#programs" style="padding:17px 26px;font-size:12.5px">ПРОГРАММЫ ТРЕНИРОВОК <i class="ri-arrow-down-line"></i></a>
-              <a class="btn-red" href="#glossary" style="padding:17px 26px;font-size:12.5px">СПРАВОЧНИК <i class="ri-book-open-line"></i></a>
-              <a class="btn-red" href="#contacts" style="background:transparent;border:1px solid var(--line2);color:var(--silver);padding:16px 24px">КОНТАКТЫ</a>
-            </div>
-            <p class="hint">ЖИМОВАЯ · ТЯГОВАЯ · НОГИ · СВОЙ ПЛАН — ВЫБЕРИ И РАБОТАЙ</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="hero-strip" data-reveal>
-        <div class="hstrip"><b>04<em>.</em></b><span>программы — жим / тяга / ноги / своя</span></div>
-        <div class="hstrip"><b>23<em>.</em></b><span>блока упражнений · атлас в каждом</span></div>
-        <div class="hstrip"><b>PANATTA<em>.</em></b><span>тренажёры родом из италии</span></div>
-      </div>
-    </div>
-  </header>
-
-  <section id="programs">
-    <div class="container">
-      <header class="sec-head" data-reveal>
-        <div class="kicker"><span class="idx">01</span> ПРОГРАММИРОВАНИЕ <span class="rule"></span> <span class="tri"></span></div>
-        <h2 class="sec-title">ПРОГРАММЫ <span class="o">ТРЕНИРОВОК.</span></h2>
-        <p class="sec-desc" style="margin-top:16px">Открой программу → жми «Начать тренировку» → работай по одному подходу: выполнил → отдых (подбирается по упражнению) → следующий. В жимовой и тяговой — расчёт весов от своего 1ПМ. Тап по «АТЛАС УПРАЖНЕНИЯ» — техника, мышцы и фото.</p>
-      </header>
-
-      <div class="pc-grid" data-reveal>
-        <button class="pcard" data-target="push" aria-expanded="false" aria-controls="panel-push">
-          <span class="pc-num mono">/01</span>
-          <span class="pc-main">
-            <span class="pc-k">Тренировка</span>
-            <h3 class="pc-name">Жимовая</h3>
-            <span class="pc-tags">Грудь · Плечи · Трицепс · Пресс</span>
-            <span class="pc-meta">10 подходов жима · расчёт от 1ПМ</span>
-          </span>
-          <span class="pc-arrow"><i class="ri-arrow-right-line"></i></span>
-        </button>
-        <button class="pcard" data-target="pull" aria-expanded="false" aria-controls="panel-pull">
-          <span class="pc-num mono">/02</span>
-          <span class="pc-main">
-            <span class="pc-k">Тренировка</span>
-            <h3 class="pc-name">Тяговая</h3>
-            <span class="pc-tags">Спина · Бицепс · Пресс</span>
-            <span class="pc-meta">6 блоков · расчёт от 1ПМ</span>
-          </span>
-          <span class="pc-arrow"><i class="ri-arrow-right-line"></i></span>
-        </button>
-        <button class="pcard" data-target="legs" aria-expanded="false" aria-controls="panel-legs">
-          <span class="pc-num mono">/03</span>
-          <span class="pc-main">
-            <span class="pc-k">Тренировка</span>
-            <h3 class="pc-name">Ноги</h3>
-            <span class="pc-tags">Силовой уклон · варианты базы · Бицепс (гантели)</span>
-            <span class="pc-meta">10 блоков · зона рекордов</span>
-          </span>
-          <span class="pc-arrow"><i class="ri-arrow-right-line"></i></span>
-        </button>
-        <button class="pcard" data-target="custom" aria-expanded="false" aria-controls="panel-custom">
-          <span class="pc-num mono">/04</span>
-          <span class="pc-main">
-            <span class="pc-k">Конструктор</span>
-            <h3 class="pc-name">Свой план</h3>
-            <span class="pc-tags">Собери тренировку под себя</span>
-            <span class="pc-meta" id="customMeta">создай тренировку под себя</span>
-          </span>
-          <span class="pc-arrow"><i class="ri-arrow-right-line"></i></span>
-        </button>
-      </div>
-      <p class="pc-hint"><i class="ri-cursor-line"></i> НАЖМИ — ПРОГРАММА ОТКРОЕТСЯ НИЖЕ</p>
-
-      <div id="panels"></div>
-    </div>
-  </section>
-
-  <section id="iron">
-    <div class="container">
-      <header class="sec-head" data-reveal>
-        <div class="kicker"><span class="idx">02</span> ЖЕЛЕЗО КЛУБА <span class="rule"></span> <span class="tri"></span></div>
-        <h2 class="sec-title">ТОЛЬКО <span class="o">ЖЕЛЕЗО.</span></h2>
-        <p class="sec-desc" style="margin-top:16px">Три движения, на которых стоит клуб: жим лёжа, тяга и присед. База — всегда база.</p>
-      </header>
-      <div class="iron-grid" data-reveal>
-
-        <figure class="duo">
-          <svg viewBox="0 0 480 360" role="img" aria-label="Схема: жимовая скамья со штангой на стойках">
-            <circle cx="250" cy="180" r="130" fill="url(#gGlow)"/>
-            <polygon points="240,-10 80,336 410,336" fill="url(#gSpot)"/>
-            <line x1="26" y1="336" x2="454" y2="336" stroke="#26262b" stroke-width="2"/>
-            <g stroke="#1d1d21" stroke-width="2">
-              <line x1="70" y1="342" x2="58" y2="352"/><line x1="150" y1="342" x2="138" y2="352"/>
-              <line x1="240" y1="342" x2="228" y2="352"/><line x1="330" y1="342" x2="318" y2="352"/>
-              <line x1="410" y1="342" x2="398" y2="352"/>
-            </g>
-            <rect x="84" y="322" width="54" height="8" fill="#1c1c20" stroke="#33333a"/>
-            <rect x="100" y="92" width="20" height="232" fill="url(#gPost)" stroke="#33333a"/>
-            <rect x="96" y="84" width="28" height="10" fill="#1c1c20" stroke="#33333a"/>
-            <rect x="100" y="104" width="20" height="5" fill="#e10600" opacity=".85"/>
-            <circle cx="110" cy="312" r="2.5" fill="#3a3a41"/><circle cx="110" cy="298" r="2.5" fill="#3a3a41"/>
-            <path d="M120 150 h32 v8 h-23 v15 h-9 z" fill="#e10600" stroke="#6b0305"/>
-            <rect x="112" y="143" width="286" height="7" rx="3.5" fill="url(#gBar)"/>
-            <rect x="368" y="138" width="8" height="17" rx="2" fill="#2c2f34"/>
-            <circle cx="402" cy="146" r="30" fill="#7e060c"/>
-            <circle cx="424" cy="146" r="34" fill="url(#gPlate)" stroke="#4c0308" stroke-width="2"/>
-            <circle cx="424" cy="146" r="21" fill="#9c0a13" opacity=".9"/>
-            <circle cx="424" cy="146" r="7" fill="url(#gBar)"/>
-            <rect x="196" y="252" width="182" height="18" rx="8" fill="url(#gPad)" stroke="#55060c" stroke-width="1.5"/>
-            <rect x="212" y="268" width="12" height="54" fill="#1a1a1e" stroke="#33333a"/>
-            <rect x="350" y="268" width="12" height="54" fill="#1a1a1e" stroke="#33333a"/>
-            <rect x="206" y="270" width="164" height="4" fill="#161619"/>
-          </svg>
-          <img src="photo/bench.jpg" alt="Жимовая скамья в зале" loading="lazy" onerror="this.remove()">
-          <figcaption class="duo-cap"><span class="tri"></span><span><b>ЖИМ ЛЁЖА</b> · СИЛОВАЯ РАМА + СКАМЬЯ</span></figcaption>
-        </figure>
-
-        <figure class="duo">
-          <svg viewBox="0 0 480 360" role="img" aria-label="Схема: тяга Т-грифа с блинами">
-            <circle cx="200" cy="200" r="130" fill="url(#gGlow)"/>
-            <polygon points="240,-10 80,336 410,336" fill="url(#gSpot)"/>
-            <line x1="26" y1="336" x2="454" y2="336" stroke="#26262b" stroke-width="2"/>
-            <g stroke="#1d1d21" stroke-width="2">
-              <line x1="90" y1="342" x2="78" y2="352"/><line x1="180" y1="342" x2="168" y2="352"/>
-              <line x1="280" y1="342" x2="268" y2="352"/><line x1="380" y1="342" x2="368" y2="352"/>
-            </g>
-            <rect x="36" y="300" width="16" height="36" fill="#1c1c20" stroke="#33333a"/>
-            <rect x="54" y="326" width="56" height="6" fill="#1c1c20"/>
-            <circle cx="82" cy="292" r="30" fill="url(#gPlate)" stroke="#4c0308" stroke-width="2"/>
-            <circle cx="82" cy="292" r="19" fill="#9c0a13" opacity=".9"/>
-            <circle cx="82" cy="292" r="7" fill="url(#gBar)"/>
-            <line x1="82" y1="292" x2="344" y2="128" stroke="url(#gBar)" stroke-width="7" stroke-linecap="round"/>
-            <circle cx="118" cy="270" r="11" fill="#7e060c" opacity=".9"/>
-            <circle cx="150" cy="250" r="15" fill="#7e060c"/>
-            <circle cx="150" cy="250" r="5" fill="url(#gBar)"/>
-            <line x1="344" y1="128" x2="386" y2="106" stroke="url(#gBar)" stroke-width="6" stroke-linecap="round"/>
-            <line x1="344" y1="128" x2="392" y2="150" stroke="url(#gBar)" stroke-width="6" stroke-linecap="round"/>
-            <line x1="386" y1="106" x2="392" y2="150" stroke="#a7adb5" stroke-width="6" stroke-linecap="round"/>
-          </svg>
-          <img src="photo/tbar.jpg" alt="Тяга Т-грифа в зале" loading="lazy" onerror="this.remove()">
-          <figcaption class="duo-cap"><span class="tri"></span><span><b>ТЯГА</b> · Т-ГРИФ</span></figcaption>
-        </figure>
-
-        <figure class="duo">
-          <svg viewBox="0 0 480 360" role="img" aria-label="Схема: стойки для приседа и штанга на полу">
-            <circle cx="240" cy="280" r="120" fill="url(#gGlow)"/>
-            <polygon points="240,-10 80,336 410,336" fill="url(#gSpot)"/>
-            <line x1="26" y1="336" x2="454" y2="336" stroke="#26262b" stroke-width="2"/>
-            <g stroke="#1d1d21" stroke-width="2">
-              <line x1="140" y1="342" x2="128" y2="352"/><line x1="240" y1="342" x2="228" y2="352"/>
-              <line x1="340" y1="342" x2="328" y2="352"/>
-            </g>
-            <rect x="58" y="322" width="50" height="8" fill="#1c1c20" stroke="#33333a"/>
-            <rect x="74" y="96" width="18" height="228" fill="url(#gPost)" stroke="#33333a"/>
-            <rect x="70" y="88" width="26" height="10" fill="#1c1c20" stroke="#33333a"/>
-            <path d="M92 150 h30 v8 h-21 v14 h-9 z" fill="#e10600" stroke="#6b0305"/>
-            <rect x="92" y="232" width="26" height="7" fill="#e10600" opacity=".85"/>
-            <rect x="372" y="322" width="50" height="8" fill="#1c1c20" stroke="#33333a"/>
-            <rect x="388" y="96" width="18" height="228" fill="url(#gPost)" stroke="#33333a"/>
-            <rect x="384" y="88" width="26" height="10" fill="#1c1c20" stroke="#33333a"/>
-            <path d="M388 150 h-30 v8 h21 v14 h9 z" fill="#e10600" stroke="#6b0305"/>
-            <rect x="362" y="232" width="26" height="7" fill="#e10600" opacity=".85"/>
-            <rect x="196" y="306" width="88" height="8" rx="4" fill="url(#gBar)"/>
-            <rect x="216" y="302" width="6" height="16" rx="2" fill="#2c2f34"/>
-            <rect x="258" y="302" width="6" height="16" rx="2" fill="#2c2f34"/>
-            <circle cx="196" cy="310" r="26" fill="url(#gPlate)" stroke="#4c0308" stroke-width="2"/>
-            <circle cx="196" cy="310" r="16" fill="#9c0a13" opacity=".9"/>
-            <circle cx="196" cy="310" r="6" fill="url(#gBar)"/>
-            <circle cx="284" cy="310" r="26" fill="url(#gPlate)" stroke="#4c0308" stroke-width="2"/>
-            <circle cx="284" cy="310" r="16" fill="#9c0a13" opacity=".9"/>
-            <circle cx="284" cy="310" r="6" fill="url(#gBar)"/>
-          </svg>
-          <img src="photo/squat.jpg" alt="Стойки для приседа и штанга в зале" loading="lazy" onerror="this.remove()">
-          <figcaption class="duo-cap"><span class="tri"></span><span><b>ПРИСЕД</b> · СТОЙКИ + ШТАНГА</span></figcaption>
-        </figure>
-
-      </div>
-    </div>
-  </section>
-
-  <section id="support">
-    <div class="container">
-      <header class="sec-head" data-reveal>
-        <div class="kicker"><span class="idx">03</span> ПОДДЕРЖКА ОРГАНИЗМА <span class="rule"></span> <span class="tri"></span></div>
-        <h2 class="sec-title">ВИТАМИНЫ И <span class="o">ПОДДЕРЖКА.</span></h2>
-        <p class="sec-desc" style="margin-top:16px">Протокол, который держит восстановление на уровне тренировок. Номера — список один в один. Без базы (еда, вода, сон) не работает ничего.</p>
-      </header>
-
-      <div class="sup-grid" data-reveal>
-        <div class="sup-card">
-          <div class="sc-head"><i class="ri-dumbbell-line"></i><h3>Вокруг тренировки</h3><span class="sc-tag">до / после</span></div>
-          <div class="sup-row">
-            <span class="sr-n">02</span>
-            <div class="sr-main"><b>Цитруллин DL-малат</b><span>за 30 минут до тренировки</span></div>
-          </div>
-          <div class="sup-row">
-            <span class="sr-n">01</span>
-            <div class="sr-main"><b>Протеин</b><span>сразу после тренировки</span></div>
-          </div>
-        </div>
-
-        <div class="sup-card">
-          <div class="sc-head"><i class="ri-sun-line"></i><h3>Утро — за завтраком</h3><span class="sc-tag">ежедневно</span></div>
-          <div class="sup-row">
-            <span class="sr-n">04</span>
-            <div class="sr-main"><b>Витамин D3 + K2</b><span>холекальферол + менахинон-7</span></div>
-          </div>
-          <div class="sup-row">
-            <span class="sr-n">05</span>
-            <div class="sr-main"><b>Omega-3</b><span>триглицеридная форма · DHA + EPA от 900 мг на капсулу</span></div>
-          </div>
-          <div class="sup-row">
-            <span class="sr-n">08</span>
-            <div class="sr-main"><b>Альфа-липоевая кислота</b><span>после завтрака</span></div>
-          </div>
-          <div class="sup-row">
-            <span class="sr-n">10</span>
-            <div class="sr-main"><b>Витамин C</b><span>после завтрака</span></div>
-          </div>
-        </div>
-
-        <div class="sup-card">
-          <div class="sc-head"><i class="ri-restaurant-line"></i><h3>День</h3><span class="sc-tag">обед</span></div>
-          <div class="sup-row">
-            <span class="sr-n">06</span>
-            <div class="sr-main"><b>Цинк аспартат</b><span>в обед</span></div>
-          </div>
-          <div class="sup-row">
-            <span class="sr-n">09</span>
-            <div class="sr-main"><b>Гепарицил Форте</b><span>после обеда · поддержка печени</span></div>
-            <span class="sr-opt">опция</span>
-          </div>
-        </div>
-
-        <div class="sup-card">
-          <div class="sc-head"><i class="ri-moon-clear-line"></i><h3>Вечер</h3><span class="sc-tag">перед сном</span></div>
-          <div class="sup-row">
-            <span class="sr-n">07</span>
-            <div class="sr-main"><b>Магний аспартат</b><span>за час до сна</span></div>
-          </div>
-        </div>
-
-        <div class="sup-card">
-          <div class="sc-head"><i class="ri-time-line"></i><h3>Без привязки ко времени</h3><span class="sc-tag">когда удобно</span></div>
-          <div class="sup-row">
-            <span class="sr-n">03</span>
-            <div class="sr-main"><b>Креатин моногидрат — 5 г</b><span>время приёма без разницы</span></div>
-          </div>
-          <div class="sup-row">
-            <span class="sr-n">11</span>
-            <div class="sr-main"><b>Коллаген</b><span>по желанию</span></div>
-            <span class="sr-opt">опция</span>
-          </div>
-          <div class="sup-row">
-            <span class="sr-n">12</span>
-            <div class="sr-main"><b>Натрий</b><span>проще поваренной соли в еду + пить достаточно воды</span></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="sup-base" data-reveal><i class="ri-water-flash-line"></i> База: еда · вода · сон. Протокол ускоряет восстановление — но не заменяет базу.</div>
-    </div>
-  </section>
-
-  <section id="nutrition">
-    <div class="container">
-      <header class="sec-head" data-reveal>
-        <div class="kicker"><span class="idx">04</span> МАКРОС · МЕНЮ · РЕЦЕПТЫ <span class="rule"></span> <span class="tri"></span></div>
-        <h2 class="sec-title">ПИТАНИЕ И <span class="o">МЕНЮ.</span></h2>
-        <p class="sec-desc" style="margin-top:16px">Расчёт под свой вес, схемы по трём целям, личное меню и рецепты. Всё проверено на себе — без магии, только баланс.</p>
-      </header>
-
-      <div class="nut-tabs" data-reveal>
-        <button class="gy-chip on" data-goal="recomp">РЕКОМПОЗИЦИЯ</button>
-        <button class="gy-chip" data-goal="gain">НАБОР</button>
-        <button class="gy-chip" data-goal="cut">СУШКА</button>
-      </div>
-
-      <div class="nut-wrap" data-reveal>
-        <div class="nut-calc">
-          <div class="nut-w">
-            <label for="nutWeight">ТВОЙ ВЕС</label>
-            <input class="nut-w-in" id="nutWeight" type="number" inputmode="decimal" min="30" max="400" step="0.5" value="80" autocomplete="off">
-            <small>кг · введи свой — всё пересчитается</small>
-          </div>
-          <div class="macros">
-            <div class="macro p"><b id="mP">—<i>г</i></b><span>белки</span></div>
-            <div class="macro"><b id="mF">—<i>г</i></b><span>жиры</span></div>
-            <div class="macro"><b id="mC">—<i>г</i></b><span>углеводы</span></div>
-          </div>
-        </div>
-        <p class="nut-kcal">≈ <b id="mK">—</b> ккал — производная от БЖУ. <b>Калории смысла считать отдельно не вижу — они исходят из Б+Ж+У.</b></p>
-        <div class="nut-notes" id="nutNotes"></div>
-        <div class="nut-goal-note" id="nutGoalNote"></div>
-      </div>
-
-      <div class="nut-goal-note" data-reveal style="margin-top:14px">
-        <b>Рис и коэффициент разваренности.</b> Рис при варке тяжелеет примерно в 2,6–3 раза: 100 г сухого — это 260–300 г варёного. Все варят по-разному, и сорт влияет на КБЖУ — поэтому сухую цифру нельзя переносить в варёный вес. Один раз взвесь рис до варки и после — получишь свой коэффициент, и расчёт всегда будет точным.
-      </div>
-
-      <div class="menu-grid" data-reveal>
-        <div class="meal">
-          <div class="meal-k"><span class="tri"></span> ЗАВТРАК</div>
-          <p class="meal-line">2 яйца + творог 200 г + йогурт 250 г + джем 40 г + молоко 100 мл</p>
-          <p class="meal-macros">Б <b>83.1</b> · Ж <b>25.5</b> · У <b>48.4</b> · <b>≈756 ккал</b><br>вариация: обезжиренная сгущёнка вместо джема + чуть корицы</p>
-        </div>
-        <div class="meal">
-          <div class="meal-k"><span class="tri"></span> ПЕРЕД ТРЕНИРОВКОЙ</div>
-          <p class="meal-line">1 зефирка</p>
-          <p class="meal-macros">Б <b>0.2</b> · Ж <b>0</b> · У <b>24</b> · <b>≈97 ккал</b><br>быстрый уголь прямо перед залом</p>
-        </div>
-        <div class="meal">
-          <div class="meal-k"><span class="tri"></span> ОБЕД</div>
-          <p class="meal-line">Курица 250 г + рис варёный 300 г + терияки 40 г + огурец/помидор + пармезан 30 г</p>
-          <p class="meal-macros">Б <b>74.9</b> · Ж <b>25.6</b> · У <b>112.7</b> · <b>≈985 ккал</b></p>
-        </div>
-        <div class="meal">
-          <div class="meal-k"><span class="tri"></span> ПОСЛЕ ТРЕНИРОВКИ</div>
-          <p class="meal-line">Протеин 30 г + молоко 250 мл</p>
-          <p class="meal-macros">Б <b>+31.5</b> · Ж <b>+5.75</b> · У <b>+14.75</b> · <b>+231 ккал</b></p>
-        </div>
-        <div class="meal">
-          <div class="meal-k"><span class="tri"></span> УЖИН</div>
-          <p class="meal-line">Курица 200 г + рис варёный 300 г + терияки 40 г + огурец + пармезан 30 г</p>
-          <p class="meal-macros">Б <b>63.6</b> · Ж <b>24.2</b> · У <b>112.7</b> · <b>≈927 ккал</b></p>
-        </div>
-        <div class="meal wide total">
-          <div class="meal-k"><span class="tri"></span> ИТОГО ЗА ДЕНЬ</div>
-          <p class="meal-line">Б ~245 · Ж ~75 · У ~306 · ≈2968 ккал</p>
-          <p class="meal-macros">Это день рекомпозиции. <b>Резка:</b> убрал яйца с завтрака + урезал рис и соусы. <b>Набор:</b> угли вверх. Все манипуляции между целями — игра с углеводами: где-то больше, где-то меньше.</p>
-        </div>
-      </div>
-
-      <div class="nut-wrap" data-reveal style="margin-top:14px">
-        <span class="dat-label">ЗАМЕНЫ — ПОД СВОЙ ВКУС</span>
-        <div class="nut-notes" style="margin-top:12px">
-          <div class="nut-note"><i class="ri-arrow-left-right-line"></i><span>Белок: грудку можно менять на всё, что любишь — креветки, рыбу, что угодно. Главное — попасть в своё суточное белковое окно.</span></div>
-          <div class="nut-note"><i class="ri-arrow-left-right-line"></i><span>Углеводы: рис удобнее всего и лучше усваивается, но подойдут макароны, картофель, гречка — можно добрать кусочком хлеба.</span></div>
-          <div class="nut-note"><i class="ri-arrow-left-right-line"></i><span>Завтрак-вариация: обезжиренная сгущёнка вместо варенья и мёда + чуть корицы для вкуса.</span></div>
-        </div>
-      </div>
-
-      <div class="q-block" data-reveal>
-        <p>Ты можешь есть как сложные, так и быстрые углеводы — <b>в балансе они равны</b>. Разница в другом: на быстрых ты будешь голоден, на сложных — сыт. Голодать не обязательно: можно есть даже в «Маке» — просто урежь съеденное ради баланса, который складывается сначала в недельный, а уже потом в месячный.</p>
-        <p style="margin-top:10px">План питания раскрывается на дистанции <b>трёх месяцев</b> — в конце решаешь, какими будут следующие три. Не забывай пить воду. И «соль — белая смерть» — <b>ошибочное заявление</b>: соль нужна, проще всего добавлять её на овощи.</p>
-        <p class="q-sig">— ЛИЧНЫЙ ОПЫТ ARES</p>
-      </div>
-
-      <div class="rec-grid" data-reveal>
-        <div class="rec">
-          <h4><i class="ri-fire-line"></i> Запечённая грудка + картошка</h4>
-          <p>Неудобно жарить без масла — <b>запеки в духовке</b>, выходит шикарно. Картошка: соль, паприка, сухой укроп (клетчатка), сухой чеснок. Грудка: то же самое, но без укропа.</p>
-        </div>
-        <div class="rec">
-          <h4><i class="ri-leaf-line"></i> Белковый салат</h4>
-          <p>Порционно и всегда заходит: <b>грецкий орех, яйца, грудка, сыр, обезжиренный майонез</b> — и вкусный салат готов.</p>
-        </div>
-        <div class="rec">
-          <h4><i class="ri-fish-line"></i> Рис с тунцом и терияки</h4>
-          <p>Быстро, сытно и точно в окно: <b>варёный рис + тунец + терияки</b>.</p>
-        </div>
-        <div class="rec">
-          <h4><i class="ri-restaurant-2-line"></i> Шаурма ARES</h4>
-          <p>Когда времени на готовку нет. Соус: <b>греческий йогурт + обезжиренный майонез + сухой чеснок + сухой укроп</b>. Дальше огурцы, салат, помидоры + грудка — и готово.</p>
-        </div>
-      </div>
-
-      <div class="q-block" data-reveal style="border-color:rgba(255,59,42,.3)">
-        <p><b>Самое главное:</b> есть можно всё, что любишь — главное попасть в своё окно. Перебрал что-то — урезь на следующий день. <b>Баланс — самое главное.</b></p>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ СПРАВОЧНИК ============ -->
-  <section id="glossary">
-    <div class="container">
-      <header class="sec-head" data-reveal>
-        <div class="kicker"><span class="idx">05</span> ТЕРМИНЫ · ТЕХНИКА · ТРЕНАЖЁРЫ <span class="rule"></span> <span class="tri"></span></div>
-        <h2 class="sec-title">СПРАВОЧНИК <span class="o">ARES.</span></h2>
-        <p class="sec-desc" style="margin-top:16px">Что значат записи в программах и где живёт каждый тренажёр. Атлас упражнений с мышцами и техникой — прямо в программах: тап по «АТЛАС УПРАЖНЕНИЯ».</p>
-      </header>
-
-      <div class="gloss-grid" data-reveal>
-        <div class="gloss">
-          <h4><span class="g-term">Взрывной подъём</span></h4>
-          <p>Резкий, мощный и <b>быстрый</b> подъём веса. Опускаешь подконтрольно — поднимаешь с максимальной скоростью, которую позволяет вес. Тренирует силу и мощность, а не просто «дожать повтор».</p>
-        </div>
-        <div class="gloss">
-          <h4><span class="g-term">Негатив</span></h4>
-          <p><b>Опускание</b> веса в течение <b>3 секунд</b> — медленное и подконтрольное, против силы гравитации. Мышцы на опускании работают не меньше, чем на подъёме — негатив добивает их, когда подъём уже не идёт.</p>
-        </div>
-        <div class="gloss">
-          <h4><span class="g-term">Взрыв + негатив</span></h4>
-          <p>Комбинация: <b>подъём — взрывной</b>, <b>опускание — негатив, 3 секунды</b>. Самый тяжёлый режим в программах: максимум мощности вверх, максимум контроля вниз. Обычно ставится в конце блока как финишер.</p>
-        </div>
-        <div class="gloss">
-          <h4><span class="g-term">Пауза 1 / 2 секунды</span></h4>
-          <p>После опускания вес <b>замирает</b> на указанное время — без отбива, без помощи инерции. Убивает читинг и заставляет мышцы стартовать с мёртвой точки. Пауза 2 секунды в жиме лёжа — стандарт соревновательного пауэрлифтинга.</p>
-        </div>
-        <div class="gloss">
-          <h4><span class="g-term">Ларсон</span></h4>
-          <p>Жим лёжа <b>узким хватом с изогнутой штангой</b> (Larson bar): гриф изогнут так, что кисти стоят под естественным углом — трицепс работает жёстче, а запястья не выкручиваются. У нас выполняется как обычный жим узким хватом, только комфортнее для рук.</p>
-        </div>
-        <div class="gloss">
-          <h4><span class="g-term">Узкий хват</span></h4>
-          <p>Кисти на грифе <b>уже плеч</b> — примерно на ширине таза. Смещает акцент с груди на <b>трицепс и внутреннюю часть груди</b>. В записях всегда уточняется: «узкий хват» = руки уже, чем в обычном жиме.</p>
-        </div>
-        <div class="gloss">
-          <h4><span class="g-term">До отказа</span></h4>
-          <p>Подход продолжается до последнего <b>чистого</b> повтора — того, после которого следующий технично уже не сделать. Не «пока руки не отвалятся», а именно до последнего честного движения.</p>
-        </div>
-        <div class="gloss">
-          <h4><span class="g-term">Добивка</span></h4>
-          <p>Дополнительный подход в конце упражнения — <b>лёгким весом, до отказа</b>. Финальный аккорд блока: добить мышцу, когда основные подходы уже сделаны.</p>
-        </div>
-        <div class="gloss">
-          <h4><span class="g-term">По состоянию</span></h4>
-          <p>Подход выполняется, <b>если тело позволяет</b>: есть силы и техника не едет. Нет сил — подход пропускается без чувства вины. Программа учитывает усталость, а не воюет с ней.</p>
-        </div>
-        <div class="gloss">
-          <h4><span class="g-term">Тоннаж</span></h4>
-          <p>Сумма: <b>вес × повторы × подходы</b> за тренировку или блок. Показывает объём работы в килограммах. Растёт не только от веса на штанге — и от выносливости, и от количества повторов.</p>
-        </div>
-        <div class="gloss">
-          <h4><span class="g-term">Отдых 90 / 120 / 180</span></h4>
-          <p>Секунды между подходами. Логика простая: <b>180</b> — база (жим, Т-гриф, жим ногами), <b>120</b> — средняя тяжесть, <b>90</b> — изоляция и пресс. Таймер в зальном режиме ставит нужное сам.</p>
-        </div>
-        <div class="gloss">
-          <h4><span class="g-term">Жим / тяга / сведение / отведение</span></h4>
-          <p><b>Жим</b> — толкаешь от себя. <b>Тяга</b> — притягиваешь к себе. <b>Сведение</b> — сводишь руки через сторону внутрь. <b>Отведение</b> — уводишь от тела наружу. Эти слова в названии определяют само движение.</p>
-        </div>
-        <div class="gloss wide">
-          <h4><span class="g-term">Техника выше веса</span></h4>
-          <p>Универсальное правило клуба: <b>вес растёт только тогда, когда с идеальной техникой сделано 12 повторений</b>. 30 кг чисто стоят больше, чем 60 криво. Форма — валюта, вес — только её отражение.</p>
-        </div>
-      </div>
-
-      <div class="eq-links" data-reveal>
-        <h3><i class="ri-external-link-line"></i> ТРЕНАЖЁРЫ — ОФИЦИАЛЬНЫЕ СТРАНИЦЫ</h3>
-        <p class="dat-p">Где живёт каждое железо из программ: характеристики, фото, описание от производителя. <b style="color:var(--txt)">Тап по названию — атлас упражнения: описание, мышцы, фото.</b></p>
-        <div class="eq-row"><span data-atlas-jump="bicep-panatta">Бицепс Panatta<i class="ri-book-open-line"></i></span><a href="https://www.panattasport.com/en/free-weight-special/three-angles-bicep-machine/" target="_blank" rel="noopener">Panatta ↗</a></div>
-        <div class="eq-row"><span data-atlas-jump="flight-panatta">Сведение Panatta лёжа<i class="ri-book-open-line"></i></span><a href="https://www.panattasport.com/en/free-weight-special/super-middle-chest-flight-machine/" target="_blank" rel="noopener">Panatta ↗</a></div>
-        <div class="eq-row"><span data-atlas-jump="french-panatta">Французский жим<i class="ri-book-open-line"></i></span><a href="https://www.panattasport.com/en/free-weight-special/super-french-press-machine/" target="_blank" rel="noopener">Panatta ↗</a></div>
-        <div class="eq-row"><span data-atlas-jump="xrow">Х-тяга<i class="ri-book-open-line"></i></span><a href="https://www.panattasport.com/en/free-weight-special/super-lat-pulldown-circular/" target="_blank" rel="noopener">Panatta ↗</a></div>
-        <div class="eq-row"><span data-atlas-jump="latraise-panatta">Отведение плеча<i class="ri-book-open-line"></i></span><a href="https://www.panattasport.com/en/fit-evo/standing-multi-flight/" target="_blank" rel="noopener">Panatta ↗</a></div>
-        <div class="eq-row"><span data-atlas-jump="tricep-panatta">Трицепс Panatta<i class="ri-book-open-line"></i></span><a href="https://www.panattasport.com/en/free-weight-special/alternate-triceps-machine/" target="_blank" rel="noopener">Panatta ↗</a></div>
-        <div class="eq-row"><span data-atlas-jump="abs-panatta">Пресс Panatta<i class="ri-book-open-line"></i></span><a href="https://sportres.ru/product/press-panatta-1hp565/" target="_blank" rel="noopener">Sportres ↗</a></div>
-        <div class="eq-row"><span data-atlas-jump="ohp">Жим от плеч<i class="ri-book-open-line"></i></span><a href="https://goldgym.ru/catalog/power/pure-strength-shoulder-press/" target="_blank" rel="noopener">GoldGym ↗</a></div>
-        <div class="eq-row"><span data-atlas-jump="tbar">Т-гриф<i class="ri-book-open-line"></i></span><a href="https://goldgym.ru/catalog/power/pure-strength-t-bar-row/" target="_blank" rel="noopener">GoldGym ↗</a></div>
-        <div class="eq-row"><span data-atlas-jump="hrow">Горизонтальная тяга с подвижными ручками<i class="ri-book-open-line"></i></span><a href="https://sportres.ru/product/gorizontalnaya-tyaga-krugovaya-versiya-super-panatta-1fw204/" target="_blank" rel="noopener">Sportres ↗</a></div>
-        <div class="eq-row"><span data-atlas-jump="pullover">Пуловер Technogym<i class="ri-book-open-line"></i></span><a href="https://goldgym.ru/catalog/trenazhery-s-probegom/pulover-technogym-pure-strenght-pullover/" target="_blank" rel="noopener">GoldGym ↗</a></div>
-        <div class="eq-row"><span data-atlas-jump="legcurl">Сгибания ног<i class="ri-book-open-line"></i></span><a href="https://goldgym.ru/catalog/power/selection900-leg-curl/" target="_blank" rel="noopener">GoldGym ↗</a></div>
-        <div class="eq-row"><span data-atlas-jump="legext">Разгибания ног<i class="ri-book-open-line"></i></span><a href="https://goldgym.ru/catalog/power/selection700-leg-extension/" target="_blank" rel="noopener">GoldGym ↗</a></div>
-        <div class="eq-row"><span data-atlas-jump="kolodec">Тренажёр «Колодец»<i class="ri-book-open-line"></i></span><a href="https://goldgym.ru/catalog/power/loaded/booty-pump-prisedaniya-s-poyasom-kolodets-/" target="_blank" rel="noopener">GoldGym ↗</a></div>
-        <div class="eq-row"><span data-atlas-jump="incline">Подъём на бицепс 45°<i class="ri-book-open-line"></i></span><a href="https://gym-training.com/ru/uprazhnenie-podem-ganteley-na-biceps-sidya-na-naklonnoy-skame/" target="_blank" rel="noopener">Gym-Training ↗</a></div>
-      </div>
-    </div>
-  </section>
-
-  <div class="big-marquee" aria-hidden="true">
-    <div class="bm-track" id="legTrack"></div>
-  </div>
-
-  <section id="contacts">
-    <div class="container">
-      <header class="sec-head" data-reveal>
-        <div class="kicker"><span class="idx">06</span> КОНТАКТЫ <span class="rule"></span> <span class="tri"></span></div>
-        <h2 class="sec-title">НА <span class="o">СВЯЗИ.</span></h2>
-      </header>
-      <div class="contact-grid" data-reveal>
-        <div class="cc">
-          <span class="cc-label"><i class="ri-telegram-fill"></i> TELEGRAM</span>
-          <p class="cc-val"><a href="https://t.me/RBares1337" target="_blank" rel="noopener">@RBares1337</a></p>
-          <button class="copy-btn" data-copy="@RBares1337"><i class="ri-file-copy-line"></i> КОПИРОВАТЬ</button>
-        </div>
-        <div class="cc">
-          <span class="cc-label"><i class="ri-phone-fill"></i> ТЕЛЕФОН</span>
-          <p class="cc-val"><a href="tel:+79939099798">+7 993 909-97-98</a></p>
-          <button class="copy-btn" data-copy="+79939099798"><i class="ri-file-copy-line"></i> КОПИРОВАТЬ</button>
-        </div>
-        <div class="cc">
-          <span class="cc-label"><i class="ri-copper-coin-line"></i> USDT · TRC20</span>
-          <p class="cc-val mono">TQ2mfqejDFayMqvpPoGYz4PKV5M2MT8qb8</p>
-          <button class="copy-btn" data-copy="TQ2mfqejDFayMqvpPoGYz4PKV5M2MT8qb8"><i class="ri-file-copy-line"></i> КОПИРОВАТЬ АДРЕС</button>
-        </div>
-      </div>
-
-      <div class="contact-msg" data-reveal>
-        <span class="cc-label"><i class="ri-telegram-fill"></i> НАПИСАТЬ АВТОРУ — @RBares1337</span>
-        <textarea class="cm-ta" id="cmText" placeholder="Вопрос, идея или нашёл баг — напиши здесь…" spellcheck="false"></textarea>
-        <div class="cm-foot">
-          <button class="btn-fin" id="cmSend"><i class="ri-send-plane-fill"></i> ОТПРАВИТЬ В TELEGRAM</button>
-          <span class="cm-hint">текст подставится в чат · копия останется в буфере</span>
-        </div>
-      </div>
-    </div>
-  </section>
-</main>
-
-<div class="tri-line" aria-hidden="true"></div>
-<div class="tape" aria-hidden="true"></div>
-
-<footer>
-  <div class="container">
-    <div class="foot-grid">
-      <div class="foot-brand">
-        <a class="logo" href="#top"><span class="logo-mark"></span><span><span class="logo-name">ARES <em>GYM</em></span><span class="logo-sub">POWER · DISCIPLINA</span></span></a>
-        <p>Жим. Тяга. Ноги. Гибрид пауэрлифтинга и бодибилдинга — без воды и оправданий.</p>
-      </div>
-      <div class="foot-italy"><span class="tri"></span> PANATTA — MADE IN ITALY</div>
-    </div>
-    <div class="foot-bottom">
-      <span>© 2025 ARES GYM</span>
-      <span>ЖИМ · ТЯГА · ПРИСЕД</span>
-      <button id="toTop">НАВЕРХ <i class="ri-arrow-up-line"></i></button>
-    </div>
-  </div>
-</footer>
-
-<div class="gym" id="gym" role="dialog" aria-modal="true" aria-label="Зальный режим">
-  <div class="gy-top">
-    <span class="gy-prog" id="gyProg">—</span>
-    <span class="gy-clock" id="gyClock"></span>
-    <button class="gy-close" id="gyClose" aria-label="Закрыть зальный режим"><i class="ri-close-line"></i></button>
-  </div>
-  <div class="gy-bar"><i class="gy-fill" id="gyFill"></i></div>
-  <div class="gy-mid" id="gyMid"></div>
-</div>
-
-<div class="report" id="report" role="dialog" aria-modal="true" aria-label="Итоги тренировки">
-  <div class="rp-box">
-    <header class="rp-head">
-      <span class="rp-title">ИТОГИ ТРЕНИРОВКИ — ДЛЯ АНАЛИЗА</span>
-      <button class="gy-close" id="repClose" aria-label="Закрыть отчёт"><i class="ri-close-line"></i></button>
-    </header>
-    <pre class="rp-pre" id="reportText"></pre>
-    <footer class="rp-foot">
-      <button class="btn-fin" id="repCopy"><i class="ri-file-copy-line"></i> СКОПИРОВАТЬ ВСЁ</button>
-      <button class="gy-ghost" id="repPhoto"><i class="ri-image-line"></i> ФОТОКАРТОЧКА</button>
-      <button class="gy-ghost" id="repSendTG"><i class="ri-telegram-fill"></i> В TELEGRAM</button>
-      <button class="gy-ghost" id="repClose2">ЗАКРЫТЬ</button>
-    </footer>
-  </div>
-</div>
-
-<div class="report" id="dataModal" role="dialog" aria-modal="true" aria-label="Данные и бэкап">
-  <div class="rp-box">
-    <header class="rp-head">
-      <span class="rp-title">ДАННЫЕ · БЭКАП И ПЕРЕНОС</span>
-      <button class="gy-close" id="datClose" aria-label="Закрыть"><i class="ri-close-line"></i></button>
-    </header>
-    <div class="dat-body">
-      <p class="dat-status" id="datStatus">—</p>
-      <p class="dat-p">Весь прогресс — галочки, заметки, веса, повторы, тренажёры и свой план — в одном коде. Сохрани его и вставь после открытия страницы или перенеси на другое устройство.</p>
-      <span class="dat-label">КОД ТЕКУЩЕГО СОСТОЯНИЯ</span>
-      <textarea class="dat-ta" id="datOut" readonly spellcheck="false"></textarea>
-      <div class="dat-actions">
-        <button class="btn-fin" id="datCopy"><i class="ri-file-copy-line"></i> СКОПИРОВАТЬ КОД</button>
-      </div>
-      <span class="dat-label">ВОССТАНОВИТЬ ИЗ КОДА</span>
-      <textarea class="dat-ta" id="datIn" placeholder="ARES2.…" spellcheck="false"></textarea>
-      <div class="dat-actions">
-        <button class="gy-ghost" id="datApply"><i class="ri-upload-2-line"></i> ВОССТАНОВИТЬ</button>
-        <span class="dat-warn">заменит текущие данные</span>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="report" id="planModal" role="dialog" aria-modal="true" aria-label="Конструктор плана">
-  <div class="rp-box">
-    <header class="rp-head">
-      <span class="rp-title">КОНСТРУКТОР · СВОЙ ПЛАН</span>
-      <button class="gy-close" id="planClose" aria-label="Закрыть"><i class="ri-close-line"></i></button>
-    </header>
-    <div class="dat-body">
-      <span class="dat-label">НАЗВАНИЕ ПЛАНА</span>
-      <input class="dat-in" id="plName" value="Свой план" autocomplete="off" spellcheck="false">
-      <span class="dat-label">УПРАЖНЕНИЯ</span>
-      <div id="plBlocks" style="display:flex;flex-direction:column;gap:10px"></div>
-      <button class="gy-ghost" id="plAddBlk"><i class="ri-add-line"></i> ДОБАВИТЬ УПРАЖНЕНИЕ</button>
-    </div>
-    <footer class="rp-foot">
-      <button class="btn-fin" id="plSave"><i class="ri-save-3-line"></i> СОХРАНИТЬ ПЛАН</button>
-      <button class="gy-ghost" id="plCancel">ОТМЕНА</button>
-    </footer>
-  </div>
-</div>
-
-<div class="report" id="gateModal" role="dialog" aria-modal="true" aria-label="Доступ">
-  <div class="rp-box" style="width:min(520px,100%)">
-    <header class="rp-head">
-      <span class="rp-title">ARES GYM · ДОСТУП</span>
-    </header>
-    <div class="dat-body" id="gateBody"></div>
-  </div>
-</div>
-
-<div id="toasts" aria-live="polite"></div>
 <script>
-/* ================= ХЕЛПЕРЫ ================= */
-const $  = (s, c = document) => c.querySelector(s);
-const $$ = (s, c = document) => [...c.querySelectorAll(s)];
-const PRM = matchMedia('(prefers-reduced-motion: reduce)').matches;
-const escA = s => String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+"use strict";
+const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+try { tg.ready(); tg.expand(); tg.setHeaderColor('#0A0A0B'); tg.setBackgroundColor('#0A0A0B'); } catch(e) {}
+const INIT = (tg && tg.initData) || '';
+const $ = id => document.getElementById(id);
+const term = $('term');
+let POWER='AUTO', PROJECT='root', busy=false, t0=0, lastTok=0, lastProv='';
 
-/* каскад хранилищ: localStorage → sessionStorage → память */
-const LS_OK = (() => {
-  try { localStorage.setItem('__ares_t','1'); localStorage.removeItem('__ares_t'); return true; } catch (e) { return false; }
-})();
-const MEM = {};
-const LS = {
-  get(k) {
-    if (LS_OK) { try { const v = localStorage.getItem(k); if (v != null) return v; } catch (e) {} }
-    try { const v = sessionStorage.getItem(k); if (v != null) return v; } catch (e) {}
-    return (k in MEM) ? MEM[k] : null;
-  },
-  set(k, v) {
-    MEM[k] = v;
-    if (LS_OK) { try { localStorage.setItem(k, v); return; } catch (e) {} }
-    try { sessionStorage.setItem(k, v); } catch (e) {}
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+async function api(path, opts={}){
+  const r = await fetch(path, {...opts, headers:{'Content-Type':'application/json','X-Telegram-Init-Data':INIT, ...(opts.headers||{})}});
+  if (r.status===403) throw Object.assign(new Error('403'),{code:403});
+  return r;
+}
+async function japi(path, opts={}){ const r = await api(path,opts); return r.json(); }
+
+/* ---------- вывод ---------- */
+function esc(){ const d=document.createElement('div'); d.className='ln'; term.appendChild(d); term.scrollTop=1e9; return d; }
+function line(text, cls=''){ const d=esc(); d.className='ln '+cls; d.textContent=text; term.scrollTop=1e9; return d; }
+function outbox(text){ const d=document.createElement('div'); d.className='outbox'; d.textContent=text; term.appendChild(d); term.scrollTop=1e9; }
+
+/* typewriter: дельты стримятся в ОДНУ строку */
+let dl=null, dbuf='', dtyping=false;
+async function typeDelta(){
+  if (dtyping) return; dtyping=true;
+  while (dl && dbuf.length){
+    dl.textContent += dbuf[0]; dbuf = dbuf.slice(1); term.scrollTop=1e9;
+    await sleep(12);
   }
-};
-function b64urlE(str) {
-  const bytes = new TextEncoder().encode(str);
-  let bin = ''; for (const b of bytes) bin += String.fromCharCode(b);
-  return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+  dtyping=false;
 }
-function b64urlD(s) {
-  s = s.replace(/-/g,'+').replace(/_/g,'/'); while (s.length % 4) s += '=';
-  const bin = atob(s);
-  return new TextDecoder().decode(Uint8Array.from(bin, c => c.charCodeAt(0)));
+function delta(s){
+  if (!dl){ dl=esc(); const c=document.createElement('span'); c.className='cursor'; dl.appendChild(c); }
+  dbuf += s; typeDelta();
+}
+function closeDelta(){
+  if (dl){
+    const cur = dl.querySelector('.cursor'); if (cur) cur.remove();
+    if (dbuf.length) dl.textContent += dbuf;  // конец стрима: дописываем остаток сразу, ничего не теряем
+  }
+  dl=null; dbuf='';
 }
 
-/* появление при скролле */
-const HAS_IO = 'IntersectionObserver' in window;
-let rIO = null;
-if (HAS_IO) {
-  rIO = new IntersectionObserver(es => es.forEach(e => {
-    if (e.isIntersecting) { e.target.classList.add('in'); rIO.unobserve(e.target); }
-  }), { threshold: .12 });
-  $$('[data-reveal]').forEach(el => rIO.observe(el));
-} else {
-  $$('[data-reveal]').forEach(el => el.classList.add('in'));
+/* reasoning: 🧠-чип, текст тусклый, по клику раскрывается */
+let rbuf=null, rtext='', rblock=null;
+function reason(s){
+  if (!rbuf){
+    rbuf=document.createElement('div');
+    const chip=document.createElement('span'); chip.className='chip'; chip.textContent='🧠 мышление';
+    rblock=document.createElement('div'); rblock.className='reason hidden';
+    chip.onclick=()=>rblock.classList.toggle('hidden');
+    rblock.textContent='';
+    rbuf.appendChild(chip); rbuf.appendChild(rblock);
+    term.appendChild(rbuf);
+  }
+  rtext += s; rblock.textContent = rtext; term.scrollTop=1e9;
 }
-addEventListener('error', () => document.documentElement.classList.add('nojs-ok'), { once: true });
-addEventListener('unhandledrejection', () => document.documentElement.classList.add('nojs-ok'), { once: true });
+function resetResp(){ closeDelta(); rbuf=null; rtext=''; rblock=null; }
 
-/* toast: безопасная вставка через textContent (XSS-гигиена) */
-function toast(msg, icon = 'ri-information-line') {
-  const t = document.createElement('div');
-  t.className = 'toast';
-  const ic = document.createElement('i'); ic.className = icon;
-  const sp = document.createElement('span'); sp.textContent = msg;
-  t.appendChild(ic); t.appendChild(sp);
-  $('#toasts').appendChild(t);
-  requestAnimationFrame(() => t.classList.add('show'));
-  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 3600);
-}
-setTimeout(() => { const sp = $('#splash'); if (sp) { sp.classList.add('gone'); setTimeout(() => sp.remove(), 100); } }, 1900);
-
-/* ================= ПРОГРАММЫ ================= */
-const PROGRAMS = [
-{
-  id:'push', num:'01', full:'Жимовая тренировка',
-  tags:'Грудь · Плечи · Трицепс · Пресс', meta:'7 БЛОКОВ · 10 ПОДХОДОВ ЖИМА',
-  blocks:[
-    { name:'Жим лёжа', rest:180, eq:'СВОБОДНЫЙ ВЕС · СИЛОВАЯ РАМА',
-      note:'Разминочная лестница до рабочего веса. Взрыв — в каждом повторе, где это указано.',
-      sets:[
-        {w:'Гриф', r:'10', t:'Подконтрольное опускание + взрывной подъём'},
-        {w:'65',   r:'5',  t:'Взрывной подъём'},
-        {w:'90',   r:'2',  t:'Взрывной подъём — медленнее из-за веса'},
-        {w:'115',  r:'1',  t:'Пауза 2 секунды + взрывной подъём'},
-        {w:'100',  r:'3',  t:'Пауза 1 секунда + взрывной подъём'},
-        {w:'100',  r:'3',  t:'Пауза 1 секунда + взрывной подъём'},
-        {w:'100',  r:'3',  t:'Обычный темп'},
-        {w:'100',  r:'3',  t:'Обычный темп · по состоянию'},
-        {w:'90',   r:'4',  t:'Узкий хват · пауза 1 секунда · взрывной подъём'},
-        {w:'85',   r:'5',  t:'Узкий хват · Ларсон · пауза 1 секунда · взрывной подъём'}
-      ]},
-    { name:'Сведение лёжа', atlas:'flight-panatta', eq:'PANATTA · СВЕДЕНИЕ',
-      sets:[
-        {w:'15', r:'12', t:'Подконтрольно · в конце дожимай грудь бицепсом'},
-        {w:'20', r:'10', t:'Чуть негатив · максимальный контроль и прожим',
-          note:'Если жмёшь силой локтей — сбавь вес: здесь нужна идеальная техника'},
-        {w:'15', r:'8',  t:'Негатив'}
-      ]},
-    { name:'Жим от плеч', atlas:'ohp', rest:120, eq:'СВОБОДНЫЙ ВЕС',
-      sets:[
-        {w:'25', r:'8', t:'Взрывной подъём · без касания'},
-        {w:'35', r:'6', t:'Также'},
-        {w:'45', r:'5', t:'Также · последний повтор — негатив 6 секунд'}
-      ]},
-    { name:'Отведение плеча', atlas:'latraise-panatta', eq:'PANATTA · ОТВЕДЕНИЕ',
-      sets:[
-        {w:'40', r:'12', t:'Пауза в верхней точке'},
-        {w:'45', r:'10', t:'Также'},
-        {w:'50', r:'8',  t:'Также'},
-        {w:'35', r:'8',  t:'Взрыв + негатив'}
-      ]},
-    { name:'Французский жим', atlas:'french-panatta', eq:'PANATTA · ТРЕНАЖЁР',
-      sets:[
-        {w:'40', r:'8', t:'Максимальное растяжение + пауза внизу · взрывной подъём'},
-        {w:'60', r:'6', t:'Взрывной подъём · подконтрольно вниз'},
-        {w:'40', r:'8', t:'Также'}
-      ]},
-    { name:'Трицепс', atlas:'tricep-panatta', eq:'PANATTA · ТРИЦЕПС',
-      sets:[
-        {w:'15', r:'12', t:'Максимально чисто · со взрывным подъёмом'},
-        {w:'20', r:'10', t:'Также'}
-      ]},
-    { name:'Пресс', atlas:'abs-panatta', eq:'PANATTA · ПРЕСС',
-      sets:[
-        {w:'35', r:'15', t:'Пауза в верхней точке'},
-        {w:'50', r:'12', t:'Пауза в верхней точке'},
-        {w:'35', r:'10', t:'Взрыв + негатив'}
-      ]}
-  ]
-},
-{
-  id:'pull', num:'02', full:'Тяговая тренировка',
-  tags:'Спина · Бицепс · Пресс', meta:'6 БЛОКОВ · БИЦЕПС — ВАРИАНТ А/Б',
-  blocks:[
-    { name:'Тяга Т-грифа', atlas:'tbar', rest:180, eq:'PANATTA · T-BAR',
-      sets:[
-        {w:'20', r:'12',   t:'Максимальная техника: паузы + растяжение'},
-        {w:'40', r:'6',    t:'Максимальная техника: паузы + растяжение'},
-        {w:'60', r:'3',    t:'Обычная скорость · взрывной подъём'},
-        {w:'80', r:'4–6',  t:'Взрыв · до отказа'},
-        {w:'40', r:'8',    t:'Взрыв + негатив · до отказа'}
-      ]},
-    { name:'Х-тяга', atlas:'xrow', rest:120, eq:'PANATTA · X-ROW',
-      sets:[
-        {w:'20', r:'6', t:'Двумя руками · взрыв + пауза'},
-        {w:'40', r:'8', t:'По одной · взрыв + пауза'},
-        {w:'60', r:'6', t:'По одной руке'},
-        {w:'30', r:'8', t:'Взрыв + негатив'}
-      ]},
-    { name:'Горизонтальная тяга с подвижными ручками', atlas:'hrow', eq:'PANATTA',
-      sets:[
-        {w:'30', r:'6', t:'Взрыв + пауза'},
-        {w:'45', r:'4', t:'Взрыв'}
-      ]},
-    { name:'Пуловер', atlas:'pullover', eq:'TECHNOGYM',
-      sets:[ {w:'40', r:'15'}, {w:'50', r:'12'}, {w:'70', r:'8–10'} ]},
-    { name:'Бицепс', atlas:'bicep-panatta', eq:'PANATTA · БИЦЕПС',
-      sets:[
-        {w:'30', r:'12', t:'Негатив · технично, максимально подконтрольно'},
-        {w:'40', r:'10', t:'Негатив · технично, подконтрольно'},
-        {w:'60', r:'8',  t:'Взрыв + пауза'}
-      ]},
-    { name:'Бицепс — вариант на выбор', eq:'ЛИБО А · ЛИБО Б',
-      note:'Чередуй варианты от тренировки к тренировке.',
-      variants:{
-        a:{ name:'Смена положения', sets:[
-          {w:'20', r:'12', t:'Взрыв + пауза + негатив'},
-          {w:'30', r:'8',  t:'Взрыв + пауза'},
-          {w:'20', r:'8',  t:'Взрыв'}
-        ]},
-        b:{ name:'Скотт · узко · все взрывные', sets:[
-          {w:'35', r:'10', t:'Пауза в верхней точке + негатив'},
-          {w:'45', r:'6',  t:'Пауза + негатив'},
-          {w:'50', r:'4'}
-        ]}
-      }},
-    { name:'Пресс', atlas:'abs-panatta', eq:'PANATTA · ПРЕСС',
-      note:'Пауза при сокращении — всегда.',
-      sets:[
-        {w:'40', r:'15'}, {w:'50', r:'12'},
-        {w:'20', r:'15', t:'Взрыв + негатив'}
-      ]}
-  ]
-},
-{
-  id:'legs', num:'03', full:'Тренировка ног',
-  tags:'Силовой уклон · варианты базы · Бицепс (гантели) · Пресс', meta:'10 БЛОКОВ · ВАРИАНТЫ В ПЕРВОМ БЛОКЕ',
-  blocks:[
-    { name:'Разгибания ног', atlas:'legext', eq:'ТРЕНАЖЁР',
-      sets:[
-        {w:'50',  r:'12', t:'Подконтрольно · пауза вверху'},
-        {w:'70',  r:'10', t:'Также'},
-        {w:'90',  r:'6',  t:'Также'},
-        {w:'100', r:'4',  t:'Также'}
-      ]},
-    { name:'База ног — вариант на выбор', atlas:'kolodec', eq:'ЛИБО ЖИМ · ЛИБО КОЛОДЕЦ',
-      note:'Чередуй варианты от тренировки к тренировке.',
-      variants:{
-        a:{ name:'Жим ногами', sets:[
-          {w:'195',     r:'10'},
-          {w:'275',     r:'8'},
-          {w:'385–400', r:'5', t:'По ощущениям — можно пробовать прибавку'}
-        ]},
-        b:{ name:'Тренажёр «Колодец» — присед с поясом', sets:[
-          {w:'Разогревочный', r:'12'},
-          {w:'Рабочий 1',     r:'8'},
-          {w:'Рабочий 2',     r:'6'},
-          {w:'Тяжёлый',       r:'4'}
-        ]}
-      }},
-    { name:'Сгибания ног', atlas:'legcurl', eq:'ТРЕНАЖЁР',
-      sets:[
-        {w:'40', r:'12', t:'Пауза'},
-        {w:'50', r:'8',  t:'Пауза'},
-        {w:'60', r:'8',  t:'Пауза'}
-      ]},
-    { name:'Икры', eq:'ЖИМОВАЯ ПЛАТФОРМА',
-      sets:[ {w:'195', r:'12'}, {w:'195', r:'15'}, {w:'195', r:'15'} ]},
-    { name:'Экстензия', eq:'СВОЙ ВЕС + БЛИН · если нет проблем со спиной',
-      sets:[
-        {w:'Свой вес', r:'15'},
-        {w:'Блин 20',  r:'12'},
-        {w:'Блин 30',  r:'8'}
-      ]},
-    { name:'Подъём на бицепс на наклонной скамье 45°', atlas:'incline', eq:'БИЦЕПС · ГАНТЕЛИ',
-      sets:[ {w:'14', r:'10'}, {w:'16', r:'8'}, {w:'20–24', r:'6'} ]},
-    { name:'Молотки стоя', eq:'БИЦЕПС · ГАНТЕЛИ',
-      sets:[ {w:'16', r:'10'}, {w:'24', r:'6'} ]},
-    { name:'Косые молотки — ладонь вниз', eq:'БИЦЕПС · ГАНТЕЛИ',
-      sets:[
-        {w:'12', r:'12', t:'Взрывной подъём · подконтрольно'},
-        {w:'16', r:'10', t:'Чисто, подконтрольно'},
-        {w:'12', r:'8',  t:'Чисто, подконтрольно'}
-      ]},
-    { name:'Концентрированные сгибания сидя', eq:'БИЦЕПС · ГАНТЕЛИ',
-      sets:[ {w:'16', r:'10'}, {w:'14', r:'8'}, {w:'12', r:'6'} ]},
-    { name:'Пресс', atlas:'abs-panatta', eq:'PANATTA · ПРЕСС',
-      sets:[
-        {w:'30', r:'15', t:'Пауза в верхней точке'},
-        {w:'50', r:'12'},
-        {w:'30', r:'10', t:'Взрыв + негатив'}
-      ]}
-  ]
-}];
-
-/* ================= ДАННЫЕ ================= */
-const TKEY = 'ARES_GYM_TRACKER_V1';
-const CKEY = 'ARES_CUSTOM_V1';
-let store = (() => { try { return JSON.parse(LS.get(TKEY)) || {}; } catch (e) { return {}; } })();
-let customPlan = (() => { try { return JSON.parse(LS.get(CKEY)) || null; } catch (e) { return null; } })();
-let lastStats = null;
-
-(function restoreFromHash() {
-  if ((store && Object.keys(store).length) || customPlan) return;
-  const m = (location.hash || '').match(/^#s=(.+)$/);
-  if (!m) return;
-  try {
-    const o = JSON.parse(b64urlD(m[1]));
-    if (o && typeof o === 'object') {
-      if ('s' in o) { store = o.s || {}; customPlan = o.c || null; }
-      else store = o;
+/* ---------- SSE ---------- */
+async function send(){
+  if (busy) return;
+  const inp=$('inp'); const text=inp.value.trim(); if(!text) return;
+  inp.value=''; busy=true; t0=performance.now(); lastTok=0; lastProv='';
+  const shell = text.startsWith('!');
+  const payload = {mode: shell?'SHELL':'AGENT',
+                   text: shell ? text.slice(1).trim() : text,
+                   power: POWER, project: PROJECT};
+  line(shell ? ('ares:~/'+PROJECT+'$ '+payload.text) : ('❯ '+text), shell?'red':'gray');
+  if (shell && !payload.text){ busy=false; return; }
+  try{
+    const r = await api('/api/chat',{method:'POST',body:JSON.stringify(payload)});
+    const rd=r.body.getReader(), dec=new TextDecoder(); let buf='';
+    while(true){
+      const {done,value}=await rd.read(); if(done) break;
+      buf+=dec.decode(value,{stream:true});
+      let i; while((i=buf.indexOf('\n\n'))>=0){
+        const raw=buf.slice(0,i).trim(); buf=buf.slice(i+2);
+        if(!raw.startsWith('data:')) continue;
+        let ev; try{ ev=JSON.parse(raw.slice(5)); }catch(e){ continue; }
+        handle(ev);
+      }
     }
-  } catch (e) {}
-})();
-
-function packState() { return JSON.stringify({ s: store, c: customPlan }); }
-function unpackState(str) {
-  const o = JSON.parse(str);
-  if (o && typeof o === 'object' && ('s' in o)) { store = o.s || {}; customPlan = o.c || null; }
-  else store = o;
+  }catch(e){ line('!! сеть: '+e.message,'red'); }
+  const dt=((performance.now()-t0)/1000).toFixed(1);
+  line(`Forged for ${dt}s`+(lastProv?` · ${lastProv}`:'')+(lastTok?` · +${fmtK(lastTok)} TOK`:''), 'dim');
+  line('',''); busy=false; inp.focus();
 }
-function makeCode() { return 'ARES2.' + b64urlE(packState()); }
-function syncHash() { try { history.replaceState(null, '', '#s=' + makeCode()); } catch (e) {} }
-const saveStore = () => {
-  LS.set(TKEY, JSON.stringify(store));
-  if (customPlan) LS.set(CKEY, JSON.stringify(customPlan));
-  syncHash();
-};
-addEventListener('pagehide', () => { try { saveStore(); } catch (e) {} });
+function fmtK(n){ n=+n||0; return n>=1000 ? (n/1000).toFixed(1)+'k' : String(n); }
 
-/* миграция: press → push (старые данные переносятся автоматически) */
-(function migratePressToPush() {
-  try {
-    let changed = false;
-    Object.keys(store).forEach(k => {
-      if (k.indexOf('press:') === 0) { store['push' + k.slice(5)] = store[k]; delete store[k]; changed = true; }
-    });
-    const S = LS.get('ARES_SESSION_V1');
-    if (S) {
-      try {
-        const sess = JSON.parse(S);
-        if (sess && sess.press) { sess.push = sess.press; delete sess.press; LS.set('ARES_SESSION_V1', JSON.stringify(sess)); }
-      } catch (e) {}
+/* диагностика отказа: показываем, кем сервер видит пользователя */
+async function deny(icon){
+  try{ const w=await japi('/api/whoami',{method:'POST',body:'{}'});
+    line(`${icon} отказ · твой id=${w.id} · ${w.owner?'владелец ✔':'НЕ владелец'} · одобрен: ${w.approved?'да':'нет'}`, w.owner?'red':'dim');
+  }catch(e){ line(icon+' нет связи','red'); }
+}
+
+/* ---------- обработка событий (Claude Code style) ---------- */
+const TOOL={run:'Bash', shell:'Bash', write:'Write', edit:'Edit', read:'Read', list:'List'};
+function handle(ev){
+  switch(ev.t){
+    case 'provider': closeDelta(); lastProv='ares:ares-v1-max'; line('» ares:ares-v1-max','dim'); break;
+    case 'delta': delta(ev.s); break;
+    case 'reason': reason(ev.s); break;
+    case 'mode': line('· '+ev.s,'dim'); break;
+    case 'note': closeDelta(); line('· '+ev.s,'dim'); break;
+    case 'plan': {
+      closeDelta();
+      line('┌─ ПЛАН','red');
+      outbox(ev.s); break;
     }
-    if (changed) saveStore();
-  } catch (e) {}
-})();
-
-function getProg(pid) {
-  if (pid === 'custom') {
-    return {
-      id:'custom', num:'04',
-      full: (customPlan && customPlan.name) || 'Свой план',
-      tags:'Своя программа', meta:''
-    };
+    case 'step': {
+      closeDelta();
+      const k = TOOL[ev.kind] || (ev.kind||'tool').toUpperCase();
+      let s = `⏺ ${k}(${ev.s||''})`;
+      if (ev.kind==='shell' && ev.exit!==undefined) s += ` · exit ${ev.exit}`;
+      line(s, ev.ok ? 'white' : 'red');
+      if (ev.out) outbox(ev.out);
+      break;
+    }
+    case 'out': outbox(ev.s); break;
+    case 'usage': lastTok=ev.tok; break;
+    case 'state': hudTok(ev.hud, ev.state); break;
+    case 'done': closeDelta(); if (ev.s) line('✔ '+ev.s,'ok'); break;
+    case 'fail': closeDelta(); line('✖ '+ev.s,'red'); break;
+    case 'err': closeDelta(); line('!! '+ev.s,'red'); break;
+    case 'end': closeDelta(); resetResp(); break;
   }
-  return PROGRAMS.find(x => x.id === pid);
 }
 
-/* ================= АТЛАС УПРАЖНЕНИЙ =================
-   Фото-карточки подхватываются сами: <slug>-1.jpg — выполнение,
-   <slug>-2.jpg — карта мышц. Пробуются оба варианта папки — «Atlas/»
-   и «atlas/» (на GitHub Pages путь регистрозависим!). Нет файла —
-   карточка просто не показывается, блок не ломается. */
-const ATLAS = {
-  'flight-panatta': {
-    name:'Сведение Panatta лёжа',
-    main:'Грудные', second:'Передняя дельта',
-    note:'Максимальная изоляция — огромный вес тут не нужен, чтобы прочувствовать мышцу. Учитывай: ты идёшь на него после жима, грудь итак уже работала. Главное — чистейшая техника. Вектор движения схож с жимом, и в отличие от сведения сидя, здесь никак не поможешь себе дельтами.'
-  },
-  'ohp': {
-    name:'Жим от плеч',
-    main:'Передняя дельта, средняя дельта', second:'Трицепс, верх трапеции',
-    note:'Не разгибай полностью локти и не касайся стоек — вес должен быть на весу. При полном опускании теряется полезная нагрузка, как и при выпрямлении локтей: нагрузка уходит из целевой мышцы в сустав.'
-  },
-  'latraise-panatta': {
-    name:'Отведение плеча Panatta (средняя дельта)',
-    main:'Средняя дельта', second:'Передняя дельта, задняя дельта',
-    note:'Следи за паузой вверху и негативом. И за положением тела — легко сместить нагрузку на другую дельту.'
-  },
-  'french-panatta': {
-    name:'Французский жим Panatta · узкий хват',
-    main:'Трицепс', second:'Локтевая мышца',
-    note:'Узкий хват хорошо пробивает трицепс. И снова главное — техника. Опускаю полностью, выжидаю секундную паузу и со взрывом делаю подъём. На тяжёлом подходе — без паузы, чтобы не убить локти.'
-  },
-  'tricep-panatta': {
-    name:'Трицепс Panatta',
-    main:'Трицепс', second:'Локтевая мышца',
-    note:'Держи корпус крепко и сядь на ту высоту, при которой локти будут намертво прижаты. И помни: тут дикая изоляция.'
-  },
-  'abs-panatta': {
-    name:'Пресс Panatta',
-    main:'Прямая мышца живота', second:'Косые мышцы живота',
-    note:''
-  },
-  'tbar': {
-    name:'Тяга Т-грифа',
-    main:'Широчайшие, ромбовидные, трапециевидные, подостная, большая круглая, малая круглая', second:'Бицепс, задняя дельта, разгибатели спины, большая грудная',
-    note:'Силовая база спины — все силы должны уходить именно сюда. Техника безумно важна: не можешь сделать вес чисто — убавляй. Разминочный вес делай с идеальной техникой: растяжение, пауза, взрыв, контроль лопаток в статике. Тяни не руками, а спиной: сведи лопатки, мысленно поставь акцент в локтях и тяни локтями — руки просто крюки для веса.'
-  },
-  'xrow': {
-    name:'Х-тяга Panatta',
-    main:'Широчайшие, круглые мышцы спины', second:'Ромбовидные, трапециевидные, задняя дельта, бицепс',
-    note:'Когда подаёшь вес вверх — растягивай мышцу, а после взрывного опускания лови секундную паузу с фиксацией.'
-  },
-  'hrow': {
-    name:'Горизонтальная тяга с подвижными рукоятками',
-    main:'Широчайшие, ромбовидные', second:'Трапециевидные, бицепс, задняя дельта',
-    note:'Следи за техникой, делай паузы и растяжения. Для максимального растяжения можно работать по одной руке.'
-  },
-  'pullover': {
-    name:'Пуловер Technogym',
-    main:'Широчайшие', second:'Большая грудная, трицепс, зубчатые, пресс',
-    note:'Для полной изоляции широчайших ставь руки поверх длинных плоских упоров: нагрузка продавливается упором локтей и стабилизацией трицепса (поэтому он ощущается). Пресс в хорошем напряжении из-за стабилизации корпуса. Выполняй максимально подконтрольно, с негативной фазой — без резких бросаний веса.'
-  },
-  'legcurl': {
-    name:'Сгибания ног',
-    main:'Бицепс бедра', second:'Икроножные, подколенные сухожилия',
-    note:'Подконтрольные подходы + пауза. Взрывные подходы здесь не рекомендую: нагрузка на колени серьёзная, а колени нужны ещё и для старости…'
-  },
-  'legext': {
-    name:'Разгибания ног',
-    main:'Квадрицепс', second:'—',
-    note:'Сядь удобно, отрегулируй тренажёр, нижнюю опору подставь под свою длину ног. При выполнении тяги носки на себя, пауза в верхней точке, вес опускай подконтрольно — не бросай, лучше удерживай без касания, чтобы нагрузка сохранялась.'
-  },
-  'kolodec': {
-    name:'Тренажёр присед-«Колодец»',
-    main:'Квадрицепс, ягодичные', second:'Бицепс бедра, приводящие',
-    note:'Колени держи развёрнутыми по уровню стоп — внутрь не сводить.'
-  },
-  'incline': {
-    name:'Подъём на бицепс сидя 45°',
-    main:'Бицепс', second:'Плечелучевая, плечевая',
-    note:'Самое главное — разгибай локоть до конца и отпускай вес полностью, поднимай подконтрольно или взрывным, на тяжёлых подходах держи лёгкий негатив. Если читинговать и держать локоть под углом — теряется весь смысл упражнения. Начинаю сразу с развёрнутой кисти, без молоткового хвата.'
-  },
-  'bicep-panatta': {
-    name:'Бицепс Panatta',
-    main:'Бицепс', second:'Плечелучевая, плечевая',
-    note:'Вертикальное положение подушки: встань перед ней и делай подконтрольно-взрывные повторения, уперев локоть намертво в подушку. Чтобы проще держать корпус — чуть отшагни вперёд и держи упор спиной в подушку. Горизонтальное положение подушки даст акцент на брахиалис: подходишь со стороны сиденья, подъёмы сидя или полусидя с согнутыми ногами, положение рукоятки — 2–3. Для максимального пробивного эффекта — по одной руке.'
-  }
+/* ---------- HUD (опрос 5с) ---------- */
+function hudTok(hud, state){
+  $('hudTok').textContent=hud;
+  const st=$('hudSt'); st.textContent='['+state+']';
+  st.className = state==='OK' ? 'gray' : (state==='WARN' ? 'ok' : 'red');
+}
+async function hud(){
+  try{
+    const d=await japi('/api/hud');
+    const s=d.sys;
+    $('hudSys').textContent=`CPU ${Math.round(s.cpu)}% · RAM ${Math.round(s.ram_pct)}% · DISK ${Math.round(s.disk_pct)}% · up ${fmtUp(s.uptime_s)}`;
+    hudTok(d.budget.hud, d.budget.state);
+  }catch(e){}
+}
+function fmtUp(sec){ const h=Math.floor(sec/3600), m=Math.floor(sec%3600/60); return h? h+'ч'+m+'м' : m+'м'; }
+
+/* ---------- мощность (⚡ AUTO → FAST → MAX) ---------- */
+$('hudPow').onclick=()=>{
+  POWER = POWER==='AUTO'?'FAST':(POWER==='FAST'?'MAX':'AUTO');
+  $('hudPow').textContent='⚡'+POWER; $('inp').focus();
 };
-const ATLAS_TIP = 'Техника выше веса. Увеличивается вес тогда, когда сможешь с идеальной техникой сделать 12 повторений.';
-function atlasFig(slug, n, cap, alt) {
-  return `<figure><img src="Atlas/${slug}-${n}.jpg" loading="lazy" alt="${escA(alt)}" data-fb="atlas/${slug}-${n}.jpg" onerror="if(this.dataset.fb){this.src=this.dataset.fb;this.removeAttribute('data-fb')}else{this.closest('figure').remove()}"><figcaption>${cap}</figcaption></figure>`;
-}
-function atlasHTML(slug) {
-  const a = ATLAS[slug]; if (!a) return '';
-  return `<button class="atlas-toggle" data-atlas-toggle="${slug}"><i class="ri-book-open-line"></i> АТЛАС УПРАЖНЕНИЯ <i class="ri-arrow-down-s-line at-down"></i></button>
-  <div class="atlas" data-atlas-box="${slug}" hidden>
-    <div class="atlas-imgs">
-      ${atlasFig(slug, 1, 'ВЫПОЛНЕНИЕ', 'Выполнение: ' + a.name)}
-      ${atlasFig(slug, 2, 'МЫШЦЫ', 'Мышцы: ' + a.name)}
-    </div>
-    <div class="atlas-m">
-      <p class="am-main"><b>Основные:</b> ${escA(a.main)}</p>
-      <p class="am-sec"><b>Вторичные:</b> ${escA(a.second)}</p>
-      ${a.note ? `<p class="am-note">${escA(a.note)}</p>` : ''}
-      <p class="am-tip"><i class="ri-shield-check-line"></i> ${ATLAS_TIP}</p>
-    </div>
-  </div>`;
-}
 
-/* ================= КАЛЬКУЛЯТОР 1ПМ ================= */
-const CALC_SPECS = {
-  push: {
-    title:'ЖИМ ЛЁЖА — РАСЧЁТ ОТ 1ПМ',
-    rows:[
-      {i:0, label:'01 · Гриф × 10',                        pct:0,  fixed:'Гриф'},
-      {i:1, label:'02 · × 5 — взрыв',                      pct:57},
-      {i:2, label:'03 · × 2 — взрыв',                      pct:79},
-      {i:3, label:'04 · × 1 — пауза 2 сек + взрыв',        pct:100},
-      {i:4, label:'05 · × 3 — пауза 1 сек + взрыв',        pct:87},
-      {i:5, label:'06 · × 3 — пауза 1 сек + взрыв',        pct:87},
-      {i:6, label:'07 · × 3 — обычный темп',               pct:87},
-      {i:7, label:'08 · × 3 — обычный темп, по состоянию', pct:87},
-      {i:8, label:'09 · × 4 — узкий хват',                 pct:79},
-      {i:9, label:'10 · × 5 — узкий / Ларсон',             pct:74}
-    ]
-  },
-  pull: {
-    title:'ТЯГА Т-ГРИФА — РАСЧЁТ ОТ 1ПМ',
-    rows:[
-      {i:0, label:'01 · × 12 — техника: паузы + растяжение', pct:0,  fixed:'20'},
-      {i:1, label:'02 · × 6 — техника',                      pct:45},
-      {i:2, label:'03 · × 3 — взрывной подъём',              pct:67},
-      {i:3, label:'04 · × 4–6 — взрыв, до отказа',           pct:88},
-      {i:4, label:'05 · × 8 — взрыв + негатив, до отказа',   pct:45}
-    ]
-  }
+/* ---------- quick-действия ---------- */
+$('bArch').onclick=async()=>{ try{ const d=await japi('/api/archive',{method:'POST',body:JSON.stringify({project:PROJECT})});
+  line(`📦 ${d.archive.project} · ${fmtK(d.archive.size)}Б · sha${d.archive.sha256.slice(0,10)}` + (d.sent_to_chat?' · файл в чате ⬆':''),'dim'); }catch(e){ deny('📦'); } };
+$('bCold').onclick=async()=>{ try{ const d=await japi('/api/cold',{method:'POST',body:JSON.stringify({project:PROJECT})});
+  line(d.ok? `❄ ${d.result.mailbox} · частей ${d.result.parts}` : '❄ '+d.result.error, d.ok?'dim':'red'); }catch(e){ deny('❄'); } };
+$('bClean').onclick=async()=>{ try{ const d=await japi('/api/cleanup',{method:'POST',body:JSON.stringify({dry_run:true})});
+  outbox('🧹 убралось бы:\n'+(d.would_move.join('\n')||'(ничего)')+'\nактивный защищён: '+d.protected); }catch(e){ deny('🧹'); } };
+$('bStat').onclick=async()=>{ try{ const d=await japi('/healthz');
+  const v=Object.values(d.providers||{});
+  const p=v.length? 'ares:'+(v.some(x=>x.ok)?'✅':'⚠️') : 'нет ключей';
+  line(`⚡ ${d.budget.hud} [${d.budget.state}] · ${p}`,'dim'); }catch(e){ line('⚡ нет связи','red'); } };
+
+/* ---------- ввод ---------- */
+$('prompt').addEventListener('submit', e=>{ e.preventDefault(); send(); });
+
+/* ---------- гейт ---------- */
+$('bReq').onclick=async()=>{
+  $('gateMsg').textContent='… отправляю';
+  try{ await japi('/api/access_request',{method:'POST',body:'{}'});
+       $('gateMsg').textContent='✔ Заявка у владельца. Как одобрит — вернись в меню бота и открой заново.'; }
+  catch(e){ $('gateMsg').textContent='Не вышло: открой приложение через Telegram (/start → Open Ares Code).'; }
 };
-function calcWeight(one, pct) {
-  let w = Math.floor(one * pct / 100 / 2.5) * 2.5;
-  if (w < 2.5) w = 2.5;
-  return w;
-}
-function calcHTML(pid) {
-  const s = CALC_SPECS[pid];
-  const ph = pid === 'push' ? '115' : '90';
-  return `<div class="calc" id="calc-${pid}">
-    <div class="calc-title"><i class="ri-calculator-line"></i>${s.title}</div>
-    <div class="calc-warn">⚠️ <b>ВСЁ СЧИТАЕТСЯ ТОЛЬКО ДЛЯ ЧИСТОЙ ТЕХНИКИ.</b> 30 кг в идеальной технике лучше, чем 60 в кривой. 1ПМ — тот, что поднял без читинга, без «половины повтора на страховке». Программа считает от честной цифры — врать тут можно только себе.</div>
-    <div class="calc-in-row">
-      <div>
-        <span class="calc-lbl">ТВОЙ 1ПМ · КГ</span>
-        <input class="calc-in" id="calcIn-${pid}" inputmode="decimal" placeholder="${ph}" autocomplete="off">
-      </div>
-      <p class="calc-note" style="margin-top:0">Проценты выведены из авторской программы: разминка → сингл → рабочие 87% → спец-блоки. Округление вниз до блинов 2,5 кг.</p>
-    </div>
-    <div id="calcRows-${pid}"></div>
-    <button class="btn-fin calc-apply" id="calcApply-${pid}"><i class="ri-arrow-down-line"></i> ПОДСТАВИТЬ В ПРОГРАММУ</button>
-    <p class="calc-note"><b>Когда добавлять:</b> последний подход лёгкий, в запасе 2+ повтора → <b>+2,5 кг</b> к рабочим. На грани техники → вес стоит, добирай качество. Техника поехала → <b>−5 кг</b> и назад к чистоте. Прогресс — только после чистой недели.</p>
-  </div>`;
-}
 
-/* ================= РЕНДЕР ================= */
-const MEMO = `<div class="p-note"><i class="ri-flashlight-fill"></i><div>
-  <b>ПАМЯТКА:</b> правильное питание и витамины — база, а не дополнение. Без поддержки организма программа даёт лишь половину результата. <a href="#support">Весь протокол →</a></div></div>`;
-
-function fitInp(el, max = 14) { if (el) el.style.width = Math.max(3, Math.min(max, el.value.length + 1)) + 'ch'; }
-
-function setRow(s, i, pid, bi, vk, blk, rest) {
-  const k = `${pid}:${bi}:${i}${vk ? ':' + vk : ''}`;
-  const g = vk ? `b${bi}${vk}` : `b${bi}`;
-  return `<div class="set" data-k="${k}" data-g="${g}" data-blk="${escA(blk)}" data-tech="${escA(s.t || '')}" data-rest="${rest}" data-eq0="${escA(s.eq0 || '')}" ${vk ? 'data-v="1"' : ''} data-w0="${escA(s.w)}" data-r0="${escA(s.r)}">
-    <span class="s-n">${String(i + 1).padStart(2, '0')}</span>
-    <input type="checkbox" class="ck" aria-label="Подход выполнен">
-    <span class="s-wr"><input class="in-w" value="${escA(s.w)}" inputmode="decimal" aria-label="Вес, кг" autocomplete="off"><i>×</i><input class="in-r" value="${escA(s.r)}" inputmode="numeric" aria-label="Повторы" autocomplete="off"></span>
-    <span class="s-t">${escA(s.t || '')}${s.note ? `<em class="s-hint">${escA(s.note)}</em>` : ''}</span>
-    <input class="s-note-in" placeholder="заметка — как прошёл подход" autocomplete="off">
-  </div>`;
-}
-function blockHTML(b, i, pid) {
-  const num = String(i + 1).padStart(2, '0');
-  const rest = b.rest || 90;
-  const eq = b.eq || '';
-  const eqHTML = eq ? `<span class="b-eq-wrap ${/panatta/i.test(eq) ? 'panatta' : ''}"><input class="b-eq-in" data-key="${pid}:b${i}:eq" data-def="${escA(eq)}" value="${escA(eq)}" aria-label="Тренажёр — можно изменить" autocomplete="off" spellcheck="false"></span>` : '';
-  const atlas = b.atlas ? atlasHTML(b.atlas) : '';
-  if (b.variants) {
-    const rowsA = b.variants.a.sets.map((s, si) => setRow(Object.assign({}, s, { eq0: eq }), si, pid, i, 'a', `${escA(b.name)} — вариант А: ${escA(b.variants.a.name)}`, rest)).join('');
-    const rowsB = b.variants.b.sets.map((s, si) => setRow(Object.assign({}, s, { eq0: eq }), si, pid, i, 'b', `${escA(b.name)} — вариант Б: ${escA(b.variants.b.name)}`, rest)).join('');
-    return `<section class="block">
-      <header class="b-head"><span class="b-idx mono">${num}</span><h4>${escA(b.name)}</h4>${eqHTML}<span class="b-count">А / Б</span></header>
-      ${b.note ? `<p class="b-note">${escA(b.note)}</p>` : ''}
-      ${atlas}
-      <div class="alt-grid">
-        <div class="alt"><h5>ВАРИАНТ А — ${escA(b.variants.a.name)}</h5>${rowsA}</div>
-        <div class="alt"><h5>ВАРИАНТ Б — ${escA(b.variants.b.name)}</h5>${rowsB}</div>
-      </div>
-    </section>`;
-  }
-  return `<section class="block">
-    <header class="b-head"><span class="b-idx mono">${num}</span><h4>${escA(b.name)}</h4>${eqHTML}<span class="b-count">${b.sets.length} ПОДХ. · ОТДЫХ ${rest}</span></header>
-    ${b.note ? `<p class="b-note">${escA(b.note)}</p>` : ''}
-    ${atlas}
-    ${b.sets.map((s, si) => setRow(Object.assign({}, s, { eq0: eq }), si, pid, i, null, b.name, rest)).join('')}
-  </section>`;
-}
-function panelHTML(p) {
-  const hasCalc = !!CALC_SPECS[p.id];
-  return `<div class="panel" id="panel-${p.id}"><div class="panel-in"><div class="panel-box" data-pid="${p.id}">
-    <header class="panel-head">
-      <div>
-        <span class="ph-k mono">ПРОГРАММА /${p.num} · ВЕС В КГ</span>
-        <h3 class="ph-name">${p.full}</h3>
-        <p class="ph-tags">${p.tags}</p>
-      </div>
-      <span class="ph-r"><i class="ri-stack-line"></i>${p.meta}</span>
-    </header>
-    <div class="p-body">
-      <div class="start-bar">
-        <button class="btn-start" data-gym="${p.id}"><i class="ri-play-fill"></i>НАЧАТЬ ТРЕНИРОВКУ</button>
-        ${hasCalc ? '<button class="gy-open" data-calc="' + p.id + '"><i class="ri-calculator-line"></i>РАСЧЁТ ОТ 1ПМ</button>' : ''}
-        <span class="sb-hint"><b>КАК РАБОТАЕТ:</b> подход → «ВЫПОЛНЕНО» → отдых по упражнению (тап — пропуск) → следующий. Цифры, заметки и тренажёр правятся на месте.</span>
-      </div>
-      ${hasCalc ? calcHTML(p.id) : ''}
-      ${p.blocks.map((b, i) => blockHTML(b, i, p.id)).join('')}
-      <div class="track-bar">
-        <span class="tb-label">ВЫПОЛНЕНО <span class="tb-count">0/0</span></span>
-        <span class="tb-track"><i class="tb-fill"></i></span>
-        <button class="gy-open" data-gym="${p.id}"><i class="ri-play-fill"></i>ЗАЛЬНЫЙ РЕЖИМ</button>
-      </div>
-      <div class="track-actions">
-        <button class="btn-fin" data-report="${p.id}">ЗАКОНЧИТЬ ТРЕНИРОВКУ <i class="ri-flag-2-line"></i></button>
-        <button class="btn-reset" data-reset="${p.id}">СБРОС ДНЯ</button>
-        <button class="btn-reset" data-data>ДАННЫЕ · БЭКАП</button>
-      </div>
-      ${MEMO}
-    </div>
-  </div></div></div>`;
-}
-function customPanelHTML() {
-  const hasPlan = !!(customPlan && customPlan.blocks && customPlan.blocks.length);
-  const p = getProg('custom');
-  let body;
-  if (!hasPlan) {
-    body = `<div class="p-body">
-      <div class="start-bar">
-        <button class="btn-start" data-planedit><i class="ri-hammer-line"></i> СОЗДАТЬ ПЛАН</button>
-        <span class="sb-hint"><b>СВОЙ ПЛАН:</b> собери тренировку из своих упражнений — название, тренажёр, отдых, подходы. Дальше всё как в основных программах: галочки, зальный режим, таймеры, тоннаж и отчёт.</span>
-      </div>
-      ${MEMO}
-    </div>`;
-  } else {
-    body = `<div class="p-body">
-      <div class="start-bar">
-        <button class="btn-start" data-gym="custom"><i class="ri-play-fill"></i>НАЧАТЬ ТРЕНИРОВКУ</button>
-        <button class="btn-reset" data-planedit>РЕДАКТИРОВАТЬ ПЛАН</button>
-        <span class="sb-hint"><b>КАК РАБОТАЕТ:</b> как и основные программы — подход → отдых → следующий. Отдых берётся из настроек упражнения, меняется на месте.</span>
-      </div>
-      ${customPlan.blocks.map((b, i) => blockHTML(Object.assign({ rest: 90, sets: [] }, b), i, 'custom')).join('')}
-      <div class="track-bar">
-        <span class="tb-label">ВЫПОЛНЕНО <span class="tb-count">0/0</span></span>
-        <span class="tb-track"><i class="tb-fill"></i></span>
-        <button class="gy-open" data-gym="custom"><i class="ri-play-fill"></i>ЗАЛЬНЫЙ РЕЖИМ</button>
-      </div>
-      <div class="track-actions">
-        <button class="btn-fin" data-report="custom">ЗАКОНЧИТЬ ТРЕНИРОВКУ <i class="ri-flag-2-line"></i></button>
-        <button class="btn-reset" data-reset="custom">СБРОС ДНЯ</button>
-        <button class="btn-reset" data-data>ДАННЫЕ · БЭКАП</button>
-      </div>
-      ${MEMO}
-    </div>`;
-  }
-  return `<div class="panel" id="panel-custom"><div class="panel-in"><div class="panel-box" data-pid="custom">
-    <header class="panel-head">
-      <div>
-        <span class="ph-k mono">ПРОГРАММА /04 · СВОЯ СХЕМА</span>
-        <h3 class="ph-name">${escA(p.full)}</h3>
-        <p class="ph-tags">Собрал в конструкторе · правится в любой момент</p>
-      </div>
-    </header>
-    ${body}
-  </div></div></div>`;
-}
-function renderCustomPanel() {
-  const old = document.getElementById('panel-custom');
-  if (old) old.remove();
-  $('#panels').insertAdjacentHTML('beforeend', customPanelHTML());
-}
-function updateCustomCard() {
-  const m = $('#customMeta'); if (!m) return;
-  m.textContent = (customPlan && customPlan.blocks && customPlan.blocks.length)
-    ? customPlan.blocks.length + ' бл. · редактируется'
-    : 'создай тренировку под себя';
-}
-
- $('#panels').innerHTML = PROGRAMS.map(panelHTML).join('') + customPanelHTML();
-
-function openPanelEl(panel) {
-  panel.classList.add('open');
-  panel.style.maxHeight = panel.scrollHeight + 'px';
-}
-function closePanelEl(panel) {
-  panel.classList.remove('open');
-  panel.style.maxHeight = '0px';
-}
-function refreshPanelHeight(el) {
-  const panel = el && el.closest ? el.closest('.panel') : null;
-  if (panel && panel.classList.contains('open')) panel.style.maxHeight = panel.scrollHeight + 'px';
-}
- $$('.pcard').forEach(card => card.addEventListener('click', () => {
-  const blk = (window.ARES_BLOCKS || {})[card.dataset.target];
-  if (blk && (!blk.until || blk.until > Date.now())) {
-    if (window.aresShowBlock) window.aresShowBlock(card.dataset.target);
+/* ---------- boot ---------- */
+(async function boot(){
+  let w=null;
+  try{ w=await japi('/api/whoami',{method:'POST',body:'{}'}); }catch(e){}
+  if(!w || !w.approved){
+    $('gate').classList.remove('hidden'); $('app').classList.add('hidden');
+    if(w && w.requested) $('gateMsg').textContent='Заявка уже отправлена — жди ✅ от владельца.';
     return;
   }
-  const panel = document.getElementById('panel-' + card.dataset.target);
-  if (!panel) return;
-  const wasOpen = panel.classList.contains('open');
-  $$('.panel.open').forEach(p => closePanelEl(p));
-  $$('.pcard.active').forEach(c => c.classList.remove('active'));
-  $$('.pcard').forEach(c => c.setAttribute('aria-expanded', 'false'));
-  if (!wasOpen) {
-    openPanelEl(panel);
-    card.classList.add('active');
-    card.setAttribute('aria-expanded', 'true');
-    setTimeout(() => {
-      const box = $('.panel-box', panel);
-      if (box) box.scrollIntoView({ behavior: PRM ? 'auto' : 'smooth', block: 'start' });
-    }, 350);
-  }
-}));
-addEventListener('resize', debounce(() => {
-  $$('.panel.open').forEach(p => { p.style.maxHeight = p.scrollHeight + 'px'; });
-}, 150));
-
-/* тап по «АТЛАС УПРАЖНЕНИЯ» */
-document.addEventListener('click', e => {
-  const t = e.target.closest('[data-atlas-toggle]');
-  if (!t) return;
-  const scope = t.closest('section.block') || document;
-  const box = scope.querySelector('[data-atlas-box="' + t.dataset.atlasToggle + '"]');
-  if (!box) return;
-  box.hidden = !box.hidden;
-  t.classList.toggle('open', !box.hidden);
-  refreshPanelHeight(t);
-});
-
-/* тап по названию тренажёра в справочнике → атлас упражнения */
-document.addEventListener('click', e => {
-  const t = e.target.closest('[data-atlas-jump]');
-  if (!t) return;
-  const slug = t.dataset.atlasJump;
-  const box = document.querySelector('[data-atlas-box="' + slug + '"]');
-  if (!box) return;
-  const panel = box.closest('.panel');
-  const card = panel ? document.querySelector('.pcard[data-target="' + panel.id.replace('panel-', '') + '"]') : null;
-  const wasClosed = !!(panel && card && !panel.classList.contains('open'));
-  if (wasClosed) card.click();
-  const tog = box.parentElement.querySelector('[data-atlas-toggle="' + slug + '"]');
-  if (tog && box.hidden) tog.click();
-  else if (box.hidden) { box.hidden = false; refreshPanelHeight(box); }
-  setTimeout(() => {
-    box.scrollIntoView({ behavior: PRM ? 'auto' : 'smooth', block: 'center' });
-    box.classList.remove('atlas-flash'); void box.offsetWidth; box.classList.add('atlas-flash');
-    setTimeout(() => box.classList.remove('atlas-flash'), 1900);
-  }, wasClosed ? 620 : 80);
-});
-
-/* ================= ТРЕКЕР ================= */
-function updateProgress(pid) {
-  const panel = document.getElementById('panel-' + pid); if (!panel) return;
-  const tb = $('.tb-count', panel); if (!tb) return;
-  const rows = $$('.set:not([data-v])', panel);
-  const done = rows.filter(r => $('.ck', r).checked).length;
-  tb.textContent = done + '/' + rows.length;
-  $('.tb-fill', panel).style.width = rows.length ? (done / rows.length * 100) + '%' : '0%';
-  $('.btn-fin', panel).classList.toggle('ready', rows.length > 0 && done === rows.length);
-}
-function setDoneRow(row, d) {
-  const ck = $('.ck', row);
-  ck.checked = d; row.classList.toggle('done', d);
-  store[row.dataset.k] = Object.assign({}, store[row.dataset.k], { d });
-  saveStore();
-  updateProgress(row.dataset.k.split(':')[0]);
-}
-function bindRows(root) {
-  $$('.set', root).forEach(row => {
-    const pid = row.dataset.k.split(':')[0];
-    const st = store[row.dataset.k] || {};
-    const w = $('.in-w', row), r = $('.in-r', row), n = $('.s-note-in', row), ck = $('.ck', row);
-    if (st.w != null) w.value = st.w;
-    if (st.r != null) r.value = st.r;
-    if (st.n) n.value = st.n;
-    if (st.d) { ck.checked = true; row.classList.add('done'); }
-    fitInp(w); fitInp(r);
-    ck.addEventListener('change', () => {
-      setDoneRow(row, ck.checked);
-      const panel = document.getElementById('panel-' + pid);
-      if (panel) {
-        const rows = $$('.set:not([data-v])', panel);
-        if (rows.length && rows.every(x => $('.ck', x).checked))
-          toast('Программа закрыта. Жми «Закончить тренировку».', 'ri-flag-2-fill');
-      }
-    });
-    const deb = debounce(() => {
-      store[row.dataset.k] = Object.assign({}, store[row.dataset.k], { w: w.value, r: r.value, n: n.value });
-      saveStore();
-    }, 250);
-    [w, r, n].forEach(el => el.addEventListener('input', () => { fitInp(el); deb(); }));
-  });
-}
-function bindEq(root) {
-  $$('.b-eq-in', root).forEach(inp => {
-    const key = inp.dataset.key, def = inp.dataset.def || '';
-    const saved = store[key];
-    if (saved != null) inp.value = saved;
-    const wrap = inp.closest('.b-eq-wrap');
-    const sync = () => { wrap.classList.toggle('panatta', /panatta/i.test(inp.value)); fitInp(inp, 34); };
-    sync();
-    inp.addEventListener('input', () => { sync(); store[key] = inp.value; saveStore(); });
-    inp.addEventListener('blur', () => { if (!inp.value.trim()) { inp.value = def; store[key] = def; saveStore(); sync(); } });
-  });
-}
-function applyStore() {
-  $$('#panels .set').forEach(row => {
-    const st = store[row.dataset.k] || {};
-    const w = $('.in-w', row), r = $('.in-r', row), n = $('.s-note-in', row), ck = $('.ck', row);
-    w.value = st.w != null ? st.w : row.dataset.w0;
-    r.value = st.r != null ? st.r : row.dataset.r0;
-    n.value = st.n || '';
-    ck.checked = !!st.d; row.classList.toggle('done', !!st.d);
-    fitInp(w); fitInp(r);
-  });
-  $$('.b-eq-in').forEach(inp => {
-    const saved = store[inp.dataset.key];
-    if (saved != null) inp.value = saved;
-    inp.closest('.b-eq-wrap').classList.toggle('panatta', /panatta/i.test(inp.value));
-    fitInp(inp, 34);
-  });
-  ['push', 'pull', 'legs', 'custom'].forEach(updateProgress);
-}
-try {
-  bindRows($('#panels'));
-  bindEq($('#panels'));
-  ['push', 'pull', 'legs', 'custom'].forEach(updateProgress);
-  updateCustomCard();
-} catch (e) { document.documentElement.classList.add('nojs-ok'); }
-
-/* сброс дня (тренажёры не трогает) */
- $$('[data-reset]').forEach(b => b.addEventListener('click', () => {
-  if (b.dataset.arm !== '1') {
-    b.dataset.arm = '1'; b.classList.add('arm'); b.textContent = 'ТОЧНО СБРОСИТЬ?';
-    setTimeout(() => { b.dataset.arm = ''; b.classList.remove('arm'); b.textContent = 'СБРОС ДНЯ'; }, 2600);
-    return;
-  }
-  const pid = b.dataset.reset;
-  Object.keys(store).forEach(k => { if (k.startsWith(pid + ':') && !k.includes(':eq')) delete store[k]; });
-  saveStore();
-  const s = loadSess(); delete s[pid]; saveSess(s);
-  lastStats = null;
-  $$('#panel-' + pid + ' .set').forEach(row => {
-    $('.ck', row).checked = false; row.classList.remove('done');
-    $('.in-w', row).value = row.dataset.w0; $('.in-r', row).value = row.dataset.r0;
-    $('.s-note-in', row).value = '';
-    fitInp($('.in-w', row)); fitInp($('.in-r', row));
-  });
-  updateProgress(pid);
-  toast('День сброшен — чистый лист.', 'ri-restart-line');
-}));
-
-/* ================= КАЛЬКУЛЯТОР: логика ================= */
-function calcRender(pid) {
-  const inp = document.getElementById('calcIn-' + pid);
-  const box = document.getElementById('calcRows-' + pid);
-  if (!inp || !box) return;
-  const one = parseFloat(String(inp.value).replace(',', '.'));
-  const spec = CALC_SPECS[pid];
-  if (!one || one < 20 || one > 500) {
-    box.innerHTML = spec.rows.map(r =>
-      `<div class="calc-row"><span>${r.label}</span><span><span class="pct">${r.pct ? r.pct + '%' : 'фикс'}</span> <b>—</b></span></div>`).join('');
-    return;
-  }
-  box.innerHTML = spec.rows.map(r => {
-    let w;
-    if (r.pct) w = calcWeight(one, r.pct) + ' кг';
-    else w = r.fixed + (/[0-9]/.test(r.fixed) ? ' кг' : '');
-    return `<div class="calc-row"><span>${r.label}</span><span><span class="pct">${r.pct ? r.pct + '%' : 'фикс'}</span> <b>${escA(w)}</b></span></div>`;
-  }).join('');
-}
-function calcApply(pid) {
-  const panel = document.getElementById('panel-' + pid); if (!panel) return;
-  const inp = document.getElementById('calcIn-' + pid);
-  const one = parseFloat(String(inp.value).replace(',', '.'));
-  if (!one || one < 20 || one > 500) { toast('Введи честный 1ПМ в килограммах.', 'ri-error-warning-line'); return; }
-  store['1pm:' + pid] = one;
-  const blk = $$('#panel-' + pid + ' .block')[0]; if (!blk) return;
-  const rows = $$('.set', blk);
-  CALC_SPECS[pid].rows.forEach(r => {
-    const row = rows[r.i]; if (!row) return;
-    let w;
-    if (r.pct) w = String(calcWeight(one, r.pct));
-    else w = r.fixed;
-    const wi = $('.in-w', row);
-    wi.value = w; fitInp(wi);
-    row.dataset.w0 = w;
-    store[row.dataset.k] = Object.assign({}, store[row.dataset.k], { w: w });
-  });
-  saveStore();
-  ['push', 'pull'].forEach(updateProgress);
-  toast('Веса подставлены. Прогресс — только чистая техника.', 'ri-check-double-line');
-}
-(function initCalc() {
-  Object.keys(CALC_SPECS).forEach(pid => {
-    const btn = document.querySelector('[data-calc="' + pid + '"]');
-    if (!btn) return;
-    const inp = document.getElementById('calcIn-' + pid);
-    if (store['1pm:' + pid] != null) inp.value = store['1pm:' + pid];
-    btn.addEventListener('click', () => {
-      const box = document.getElementById('calc-' + pid);
-      box.classList.toggle('open');
-      if (box.classList.contains('open')) calcRender(pid);
-    });
-    inp.addEventListener('input', () => calcRender(pid));
-    document.getElementById('calcApply-' + pid).addEventListener('click', () => calcApply(pid));
-    if (inp.value) calcRender(pid);
-  });
+  $('app').classList.remove('hidden');
+  PROJECT=(w.project && w.project!=='default') ? w.project : PROJECT;  // 'default' сервера не перекрывает корень
+  line(`· ты: id=${w.id} · ${w.owner?'владелец':'НЕ владелец'} · доступ: ${w.approved?'открыт':'есть'}`,'dim');
+  $('wDir').innerHTML='workspace/<b></b>'; $('wDir').querySelector('b').textContent=PROJECT;
+  hud(); setInterval(hud, 5000);
+  $('inp').focus();
 })();
-
-/* ================= СТАТИСТИКА ================= */
-function fmtDur(s) {
-  s = Math.max(0, Math.round(s));
-  const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60;
-  return h ? h + ':' + String(m).padStart(2, '0') + ':' + String(x).padStart(2, '0')
-           : String(m).padStart(2, '0') + ':' + String(x).padStart(2, '0');
-}
-function fmtKg(n) { return n.toLocaleString('ru-RU'); }
-function parseNums(s) {
-  const m = String(s).match(/\d+(?:[.,]\d+)?/g);
-  if (!m) return null;
-  const a = m.map(x => parseFloat(x.replace(',', '.')));
-  return a.length > 1 ? (a[0] + a[1]) / 2 : a[0];
-}
-function setTonnage(w, r) {
-  const W = /гриф/i.test(w) ? 20 : parseNums(w);
-  const R = parseNums(r);
-  return (W && R) ? Math.round(W * R) : 0;
-}
-function listRows(pid) {
-  const rows = $$('#panel-' + pid + ' .set');
-  const isActive = k => { const st = store[k]; return st && (st.d || st.n || st.w != null || st.r != null); };
-  const g = {};
-  rows.forEach(r => { if (r.dataset.v && isActive(r.dataset.k)) g[r.dataset.g] = true; });
-  return rows.filter(r => !r.dataset.v || g[r.dataset.g]);
-}
-function computeTonnage(pid) {
-  const map = new Map(); let total = 0;
-  listRows(pid).forEach(r => {
-    if (!$('.ck', r).checked) return;
-    const kg = setTonnage($('.in-w', r).value, $('.in-r', r).value);
-    total += kg;
-    const e = map.get(r.dataset.blk) || { name: r.dataset.blk, kg: 0, n: 0 };
-    e.kg += kg; e.n++;
-    map.set(r.dataset.blk, e);
-  });
-  return { total, blocks: [...map.values()] };
-}
-function editedEq(row) {
-  const m = row.dataset.g.match(/^b(\d+)/); if (!m) return null;
-  const val = (store[row.dataset.k.split(':')[0] + ':b' + m[1] + ':eq'] || '').trim();
-  const def = (row.dataset.eq0 || '').trim();
-  return (val && val !== def) ? val : null;
-}
-
-/* ================= ОТЧЁТ ================= */
-function buildReport(pid) {
-  const p = getProg(pid);
-  const rows = listRows(pid);
-  const now = new Date();
-  const when = now.toLocaleDateString('ru-RU') + ' ' + now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-  let done = 0; rows.forEach(r => { if ($('.ck', r).checked) done++; });
-  const L = [];
-  L.push(p.full.toUpperCase() + ' · ' + when);
-  L.push('Закрыто подходов: ' + done + '/' + rows.length);
-  if (lastStats && lastStats.pid === pid)
-    L.push('Время тренировки: ' + fmtDur(lastStats.secs) + ' · Отдых: ' + fmtDur(lastStats.rest) + ' · Тоннаж: ' + fmtKg(lastStats.ton.total) + ' кг');
-  let curG = null, n = 0;
-  rows.forEach(r => {
-    if (r.dataset.g !== curG) {
-      curG = r.dataset.g; n = 0; L.push('');
-      const eq = editedEq(r);
-      L.push(r.dataset.blk.toUpperCase() + (eq ? ' · ' + eq.toUpperCase() : ''));
-    }
-    n++;
-    const w = $('.in-w', r).value.trim(), rr = $('.in-r', r).value.trim();
-    const tech = r.dataset.tech, note = $('.s-note-in', r).value.trim(), d = $('.ck', r).checked;
-    const join = /^[0-9]/.test(w) ? 'х' : ' × ';
-    let line = n + ') ' + w + join + rr;
-    if (tech) line += ' (' + tech + ')';
-    if (note) line += ' — ' + note;
-    if (!d) line += ' — НЕ ВЫПОЛНЕНО';
-    L.push(line);
-  });
-  const ton = computeTonnage(pid);
-  if (ton.blocks.length) {
-    L.push(''); L.push('Тоннаж по блокам:');
-    ton.blocks.forEach(b => L.push(b.name + ' — ' + fmtKg(b.kg) + ' кг (' + b.n + ' подх.)'));
-  }
-  L.push(''); L.push('— ARES GYM');
-  return L.join('\n');
-}
-const reportEl = $('#report');
-const dataEl = $('#dataModal');
-const planEl = $('#planModal');
-let reportPid = null;
-function refreshLock() {
-  const on = document.body.classList.contains('menu-open') ||
-             $('#gym').classList.contains('open') ||
-             reportEl.classList.contains('open') ||
-             dataEl.classList.contains('open') ||
-             planEl.classList.contains('open') ||
-             $('#gateModal').classList.contains('open');
-  document.documentElement.classList.toggle('no-scroll', on);
-}
-function openReport(pid) {
-  reportPid = pid;
-  $('#reportText').textContent = buildReport(pid);
-  reportEl.classList.add('open'); refreshLock();
-}
-function closeReport() { reportEl.classList.remove('open'); refreshLock(); }
- $('#repClose').addEventListener('click', closeReport);
- $('#repClose2').addEventListener('click', closeReport);
-reportEl.addEventListener('click', e => { if (e.target === reportEl) closeReport(); });
- $('#repCopy').addEventListener('click', () => copyText($('#reportText').textContent, 'отчёт — неси его в ИИ'));
-
-/* ================= ЗАЛЬНЫЙ РЕЖИМ ================= */
-const gymEl = $('#gym'), gyMid = $('#gyMid'), gyProg = $('#gyProg'), gyFill = $('#gyFill'), gyClock = $('#gyClock');
-let gym = null;
-const SKEY = 'ARES_SESSION_V1';
-const loadSess = () => { try { return JSON.parse(LS.get(SKEY)) || {}; } catch (e) { return {}; } };
-const saveSess = o => LS.set(SKEY, JSON.stringify(o));
-
-function beep() {
-  try {
-    const C = window.AudioContext || window.webkitAudioContext; if (!C) return;
-    beep.ctx = beep.ctx || new C();
-    const o = beep.ctx.createOscillator(), g = beep.ctx.createGain();
-    o.connect(g); g.connect(beep.ctx.destination);
-    o.frequency.value = 880;
-    g.gain.setValueAtTime(.001, beep.ctx.currentTime);
-    g.gain.exponentialRampToValueAtTime(.25, beep.ctx.currentTime + .02);
-    g.gain.exponentialRampToValueAtTime(.001, beep.ctx.currentTime + .55);
-    o.start(); o.stop(beep.ctx.currentTime + .6);
-  } catch (e) {}
-}
-function vib() { try { navigator.vibrate && navigator.vibrate([150, 80, 150]); } catch (e) {} }
-
-function startClock() {
-  stopClock();
-  const tick = () => { if (gyClock && gym.startTs) gyClock.textContent = fmtDur((Date.now() - gym.startTs) / 1000); };
-  tick();
-  gym.clock = setInterval(tick, 1000);
-}
-function stopClock() { if (gym && gym.clock) { clearInterval(gym.clock); gym.clock = null; } }
-
-function detectVariant(pid, all) {
-  let act = null;
-  all.forEach(r => {
-    if (!r.dataset.v || act) return;
-    const st = store[r.dataset.k];
-    if (st && (st.d || st.n || st.w != null || st.r != null))
-      act = r.dataset.g.endsWith('a') ? 'a' : 'b';
-  });
-  return act || store[pid + '::choice'] || null;
-}
-function filterRows(all, choice) {
-  return all.filter(r => !r.dataset.v || r.dataset.g.endsWith(choice));
-}
-function openGym(pid) {
-  const p = getProg(pid); if (!p) return;
-  const panel = document.getElementById('panel-' + pid); if (!panel) return;
-  const all = $$('.set', panel);
-  const hasV = all.some(r => r.dataset.v);
-  const choice = hasV ? detectVariant(pid, all) : null;
-  gym = { pid, p, all, rows: [], idx: 0, remain: 0, iv: null, clock: null, choice, startTs: null, restTotal: 0, restTs: null, sess: loadSess()[pid] || null };
-  gymEl.classList.add('open'); refreshLock();
-  if (hasV && !choice) { renderVariantChoice(); return; }
-  gym.rows = hasV ? filterRows(all, choice) : all;
-  renderStart();
-}
-function closeGym() {
-  if (gym) {
-    if (gym.restTs) { gym.restTotal += Math.round((Date.now() - gym.restTs) / 1000); gym.restTs = null; }
-    if (gym.iv) clearInterval(gym.iv);
-    stopClock();
-    if (gym.startTs) {
-      const s = loadSess();
-      if (s[gym.pid]) { s[gym.pid].restTotal = gym.restTotal; saveSess(s); }
-    }
-  }
-  gymEl.classList.remove('open'); refreshLock();
-  if (gyClock) gyClock.textContent = '';
-  gym = null;
-}
-function gyProgress() {
-  if (!gym.rows.length) { gyFill.style.width = '0%'; return; }
-  const d = gym.rows.filter(r => $('.ck', r).checked).length;
-  gyFill.style.width = (d / gym.rows.length * 100) + '%';
-}
-function nextIdx(from) {
-  let i = from;
-  while (i < gym.rows.length && $('.ck', gym.rows[i]).checked) i++;
-  return i;
-}
-function renderStart() {
-  gyProgress();
-  if (gyClock) gyClock.textContent = '';
-  const total = gym.rows.length;
-  const done = gym.rows.filter(r => $('.ck', r).checked).length;
-  const first = nextIdx(0);
-  gyProg.textContent = gym.p.full.toUpperCase() + ' · СТАРТ';
-  let primary, act;
-  if (done >= total) { primary = 'СБРОСИТЬ ОТМЕТКИ И НАЧАТЬ ЗАНОВО'; act = 'fresh'; }
-  else if (done > 0) { primary = 'ПРОДОЛЖИТЬ — ПОДХОД ' + (first + 1); act = 'start'; }
-  else { primary = 'НАЧАТЬ ТРЕНИРОВКУ'; act = 'start'; }
-  const resume = gym.sess && gym.sess.startTs;
-  gyMid.innerHTML = `
-    <span class="gy-fin-k">ПРОГРАММА /${gym.p.num} · ПОДХОДОВ: ${total}${done ? ' · ОСТАЛОСЬ: ' + (total - done) : ''}</span>
-    <h3 class="gy-fin">${escA(gym.p.full).toUpperCase()}<em>.</em></h3>
-    <p class="gy-fin-p">${resume ? 'Таймер прошлой сессии сохранён — время продолжит идти с того же места. ' : ''}Дальше — по одному подходу: выполнил → отдых → следующий. Цифры тапаются и правятся на месте.</p>
-    <button class="gy-done" data-act="${act}"><i class="${act === 'fresh' ? 'ri-restart-line' : 'ri-play-fill'}"></i> ${primary}</button>
-    <div class="gy-sub">
-      ${done > 0 && done < total ? '<button class="gy-ghost" data-act="fresh">СБРОСИТЬ ОТМЕТКИ И СНАЧАЛА</button>' : ''}
-      ${done >= total ? '<button class="gy-ghost" data-act="report"><i class="ri-file-list-3-line"></i> ОТЧЁТ</button>' : ''}
-      <button class="gy-ghost" data-act="close">ВЫЙТИ</button>
-    </div>`;
-}
-function startSession(fresh) {
-  if (fresh) {
-    gym.rows.forEach(r => {
-      const ck = $('.ck', r); ck.checked = false; r.classList.remove('done');
-      $('.s-note-in', r).value = '';
-      store[r.dataset.k] = Object.assign({}, store[r.dataset.k], { d: false, n: '' });
-    });
-    saveStore(); updateProgress(gym.pid);
-    gym.sess = null;
-    toast('Новая тренировка — погнали.', 'ri-fire-fill');
-  }
-  const s = loadSess();
-  if (gym.sess && gym.sess.startTs) {
-    gym.startTs = gym.sess.startTs; gym.restTotal = gym.sess.restTotal || 0;
-  } else {
-    gym.startTs = Date.now(); gym.restTotal = 0;
-    s[gym.pid] = { startTs: gym.startTs, restTotal: 0 }; saveSess(s);
-    lastStats = null;
-  }
-  gym.sess = null;
-  startClock();
-  gym.idx = nextIdx(0);
-  gym.idx >= gym.rows.length ? renderFinish() : renderGym();
-}
-function renderVariantChoice() {
-  gyProgress();
-  const vb = gym.p.blocks.find(b => b.variants);
-  const na = vb ? vb.variants.a.name : 'А', nb = vb ? vb.variants.b.name : 'Б';
-  gyProg.textContent = gym.p.full.toUpperCase() + ' · ВЫБОР ВАРИАНТА';
-  gyMid.innerHTML = `
-    <span class="gy-fin-k">ВЫБЕРИ ВАРИАНТ НА СЕГОДНЯ</span>
-    <h3 class="gy-fin">${escA(vb ? vb.name : '').toUpperCase() || 'БЛОК'}<em>.</em></h3>
-    <p class="gy-fin-p">В этом блоке два варианта — сегодня делаешь один. Выбор запомнится до «сброса дня».</p>
-    <button class="gy-done" data-act="pick-a">А — ${escA(na).toUpperCase()}</button>
-    <button class="gy-done ghosty" data-act="pick-b">Б — ${escA(nb).toUpperCase()}</button>
-    <button class="gy-ghost" data-act="close">ВЫЙТИ</button>`;
-}
-function renderGym() {
-  gyProgress();
-  if (gym.idx >= gym.rows.length) { renderFinish(); return; }
-  const r = gym.rows[gym.idx];
-  const wInp = $('.in-w', r), rInp = $('.in-r', r);
-  const note = $('.s-note-in', r).value;
-  const eq = editedEq(r);
-  gyProg.textContent = `${gym.p.full.toUpperCase()} · ПОДХОД ${gym.idx + 1}/${gym.rows.length}`;
-  gyMid.innerHTML = `
-    <span class="gy-blk">${escA(r.dataset.blk)}</span>
-    ${eq ? `<span class="gy-eqline">${escA(eq)}</span>` : ''}
-    <div class="gy-wr">
-      <input class="gy-w" id="gyW" value="${escA(wInp.value)}" inputmode="decimal" autocomplete="off" aria-label="Вес, кг — можно изменить">
-      <span class="gy-x">×</span>
-      <input class="gy-r" id="gyR" value="${escA(rInp.value)}" inputmode="numeric" autocomplete="off" aria-label="Повторы — можно изменить">
-    </div>
-    <p class="gy-edit-hint">тап по цифрам — правка на месте</p>
-    ${r.dataset.tech ? `<p class="gy-tech">${escA(r.dataset.tech)}</p>` : ''}
-    <input class="gy-note" id="gyNote" placeholder="заметка — как прошёл подход" autocomplete="off" value="${escA(note)}">
-    <button class="gy-done" data-act="done"><i class="ri-check-line"></i> ВЫПОЛНЕНО</button>
-    <div class="gy-sub">
-      <button class="gy-ghost" data-act="back" ${gym.idx === 0 ? 'disabled' : ''}><i class="ri-arrow-left-line"></i> НАЗАД</button>
-      <button class="gy-ghost" data-act="skip">ПРОПУСТИТЬ <i class="ri-arrow-right-line"></i></button>
-    </div>`;
-  const gw = $('#gyW'), gr = $('#gyR');
-  const fitG = el => { el.style.width = Math.max(2, Math.min(8, el.value.length + 1)) + 'ch'; };
-  fitG(gw); fitG(gr);
-  const syncNums = () => {
-    wInp.value = gw.value; rInp.value = gr.value;
-    fitInp(wInp); fitInp(rInp);
-    store[r.dataset.k] = Object.assign({}, store[r.dataset.k], { w: gw.value, r: gr.value });
-    saveStore();
-  };
-  gw.addEventListener('input', () => { fitG(gw); syncNums(); });
-  gr.addEventListener('input', () => { fitG(gr); syncNums(); });
-  const gn = $('#gyNote'), rin = $('.s-note-in', r);
-  gn.addEventListener('input', debounce(() => {
-    store[r.dataset.k] = Object.assign({}, store[r.dataset.k], { n: gn.value });
-    saveStore();
-    if (document.activeElement !== rin) rin.value = gn.value;
-  }, 300));
-}
-function startRest(nextRow) {
-  const rec = +gym.rows[gym.idx].dataset.rest || 90;
-  gym.restTs = Date.now();
-  const nextLine = nextRow
-    ? `<p class="gy-next"><i class="ri-arrow-right-line"></i> ДАЛЬШЕ: ${escA(nextRow.dataset.blk)} — <b>${escA($('.in-w', nextRow).value)} × ${escA($('.in-r', nextRow).value)}</b></p>`
-    : '';
-  gyMid.innerHTML = `
-    <span class="gy-rest-k"><i class="ri-timer-line"></i> ОТДЫХ · РЕКОМЕНДАЦИЯ ${rec} СЕК</span>
-    <button class="gy-timer" id="gyTimer" data-act="rest-skip">${fmtDur(rec)}</button>
-    <p class="gy-tap" id="gyTap">ТАП ПО ТАЙМЕРУ — ПРОПУСТИТЬ ОТДЫХ</p>
-    ${nextLine}
-    <div class="gy-presets">
-      <button class="gy-chip" data-rest="90">90</button>
-      <button class="gy-chip" data-rest="120">120</button>
-      <button class="gy-chip" data-rest="180">180</button>
-      <button class="gy-chip" data-rest="240">240</button>
-      <button class="gy-chip" data-act="p30">+30</button>
-    </div>
-    <button class="gy-done" data-act="rest-skip"><i class="ri-skip-forward-line"></i> СЛЕДУЮЩИЙ ПОДХОД</button>`;
-  setRest(rec);
-}
-function paintTimer() {
-  const t = $('#gyTimer'); if (!t) return;
-  t.textContent = fmtDur(Math.max(0, gym.remain));
-  t.classList.toggle('zero', gym.remain <= 0);
-}
-function endRestAccum() {
-  if (gym.restTs) {
-    gym.restTotal += Math.round((Date.now() - gym.restTs) / 1000);
-    gym.restTs = null;
-    const s = loadSess();
-    if (s[gym.pid]) { s[gym.pid].restTotal = gym.restTotal; saveSess(s); }
-  }
-  if (gym.iv) { clearInterval(gym.iv); gym.iv = null; }
-}
-function setRest(sec) {
-  if (gym.iv) clearInterval(gym.iv);
-  gym.remain = sec; paintTimer();
-  $$('#gyMid .gy-chip[data-rest]').forEach(c => c.classList.toggle('on', +c.dataset.rest === sec));
-  gym.iv = setInterval(() => {
-    gym.remain--; paintTimer();
-    if (gym.remain <= 0) {
-      clearInterval(gym.iv); gym.iv = null;
-      beep(); vib();
-      const tap = $('#gyTap'); if (tap) tap.textContent = 'ВРЕМЯ — ЖМИ И ДАЛЬШЕ';
-    }
-  }, 1000);
-}
-function renderFinish() {
-  endRestAccum();
-  stopClock();
-  const secs = gym.startTs ? Math.round((Date.now() - gym.startTs) / 1000) : 0;
-  const ton = computeTonnage(gym.pid);
-  lastStats = { pid: gym.pid, secs, rest: gym.restTotal, ton };
-  const s = loadSess(); delete s[gym.pid]; saveSess(s);
-  if (gyClock) gyClock.textContent = fmtDur(secs);
-  gyProgress();
-  gyProg.textContent = gym.p.full.toUpperCase() + ' · ФИНИШ';
-  const tonRows = ton.blocks.map(b =>
-    `<div class="gy-ton-row"><span>${escA(b.name)}</span><b>${fmtKg(b.kg)} кг · ${b.n} подх.</b></div>`).join('');
-  gyMid.innerHTML = `
-    <span class="gy-fin-k">ПРОГРАММА /${gym.p.num}</span>
-    <h3 class="gy-fin">ЗАКРЫТО<em>.</em></h3>
-    <div class="gy-stats">
-      <div class="gy-stat"><b>${fmtDur(secs)}</b><span>время тренировки</span></div>
-      <div class="gy-stat"><b>${fmtDur(gym.restTotal)}</b><span>отдых</span></div>
-      <div class="gy-stat"><b>${fmtKg(ton.total)}<i class="gy-kg">кг</i></b><span>тоннаж</span></div>
-    </div>
-    ${ton.blocks.length ? `<div class="gy-ton"><div class="gy-ton-h">Тоннаж по блокам</div>${tonRows}</div>` : ''}
-    <button class="gy-done" data-act="report"><i class="ri-file-list-3-line"></i> ЗАКОНЧИТЬ ТРЕНИРОВКУ</button>
-    <button class="gy-ghost" data-act="close">ВЫЙТИ</button>`;
-}
-gymEl.addEventListener('click', e => {
-  const restB = e.target.closest('[data-rest]');
-  if (restB && gym) { setRest(+restB.dataset.rest); return; }
-  const b = e.target.closest('[data-act]'); if (!b || !gym) return;
-  const act = b.dataset.act;
-  if (act === 'close') closeGym();
-  else if (act === 'start') startSession(false);
-  else if (act === 'fresh') startSession(true);
-  else if (act === 'pick-a' || act === 'pick-b') {
-    gym.choice = act.slice(-1);
-    store[gym.pid + '::choice'] = gym.choice; saveStore();
-    gym.rows = filterRows(gym.all, gym.choice);
-    renderStart();
-  }
-  else if (act === 'done') {
-    setDoneRow(gym.rows[gym.idx], true);
-    const nxt = nextIdx(gym.idx + 1);
-    nxt >= gym.rows.length ? renderFinish() : startRest(gym.rows[nxt]);
-  }
-  else if (act === 'back') { if (gym.idx > 0) { gym.idx--; setDoneRow(gym.rows[gym.idx], false); renderGym(); } }
-  else if (act === 'skip') { gym.idx = nextIdx(gym.idx + 1); gym.idx >= gym.rows.length ? renderFinish() : renderGym(); }
-  else if (act === 'rest-skip') { endRestAccum(); gym.idx = nextIdx(gym.idx + 1); gym.idx >= gym.rows.length ? renderFinish() : renderGym(); }
-  else if (act === 'p30') { setRest(gym.remain + 30); }
-  else if (act === 'report') { const pid = gym.pid; closeGym(); openReport(pid); }
-});
- $('#gyClose').addEventListener('click', closeGym);
-
-/* ================= КОНСТРУКТОР ПЛАНА ================= */
-const plBlocks = $('#plBlocks');
-function plSetRowHTML(s) {
-  s = s || {};
-  return `<div class="pl-setrow">
-    <input class="dat-in pl-sw" inputmode="decimal" placeholder="вес" value="${escA(s.w || '')}" autocomplete="off">
-    <i>×</i>
-    <input class="dat-in pl-sr" inputmode="numeric" placeholder="повт" value="${escA(s.r || '')}" autocomplete="off">
-    <input class="dat-in pl-st" placeholder="техника (необязательно)" value="${escA(s.t || '')}" autocomplete="off" spellcheck="false">
-    <button class="pl-del" data-delset aria-label="Удалить подход"><i class="ri-close-line"></i></button>
-  </div>`;
-}
-function plBlkHTML(b) {
-  b = b || { name: '', eq: '', rest: 90, sets: [{}] };
-  const sets = (b.sets && b.sets.length) ? b.sets : [{}];
-  return `<div class="pl-blk">
-    <div class="pl-top">
-      <input class="dat-in pl-bname" placeholder="Название упражнения" value="${escA(b.name || '')}" autocomplete="off" spellcheck="false">
-      <button class="pl-del" data-delblk aria-label="Удалить упражнение"><i class="ri-delete-bin-6-line"></i></button>
-    </div>
-    <div class="pl-row3">
-      <input class="dat-in pl-beq" placeholder="Тренажёр (необязательно)" value="${escA(b.eq || '')}" autocomplete="off" spellcheck="false">
-      <input class="dat-in pl-brest" inputmode="numeric" placeholder="Отдых, сек (90)" value="${b.rest || 90}" autocomplete="off">
-    </div>
-    <div class="pl-sets">${sets.map(plSetRowHTML).join('')}</div>
-    <button class="gy-ghost" data-addset><i class="ri-add-line"></i> ДОБАВИТЬ ПОДХОД</button>
-  </div>`;
-}
-function openBuilder() {
-  $('#plName').value = (customPlan && customPlan.name) || 'Свой план';
-  const blocks = (customPlan && customPlan.blocks && customPlan.blocks.length) ? customPlan.blocks : [{ name: '', eq: '', rest: 90, sets: [{}] }];
-  plBlocks.innerHTML = blocks.map(plBlkHTML).join('');
-  planEl.classList.add('open'); refreshLock();
-}
-function closeBuilder() { planEl.classList.remove('open'); refreshLock(); }
- $('#plAddBlk').addEventListener('click', () => plBlocks.insertAdjacentHTML('beforeend', plBlkHTML()));
-planEl.addEventListener('click', e => {
-  if (e.target === planEl) { closeBuilder(); return; }
-  if (e.target.closest('[data-delset]')) { e.target.closest('.pl-setrow').remove(); return; }
-  if (e.target.closest('[data-delblk]')) { e.target.closest('.pl-blk').remove(); return; }
-  const addS = e.target.closest('[data-addset]');
-  if (addS) { $('.pl-sets', addS.closest('.pl-blk')).insertAdjacentHTML('beforeend', plSetRowHTML()); }
-});
- $('#planClose').addEventListener('click', closeBuilder);
- $('#plCancel').addEventListener('click', closeBuilder);
- $('#plSave').addEventListener('click', () => {
-  const name = $('#plName').value.trim() || 'Свой план';
-  const blocks = [];
-  $$('.pl-blk', plBlocks).forEach(blk => {
-    const bname = $('.pl-bname', blk).value.trim();
-    if (!bname) return;
-    const sets = [];
-    $$('.pl-setrow', blk).forEach(sr => {
-      const w = $('.pl-sw', sr).value.trim(), r = $('.pl-sr', sr).value.trim(), t = $('.pl-st', sr).value.trim();
-      if (w || r) sets.push({ w: w || '—', r: r || '—', t: t });
-    });
-    if (!sets.length) return;
-    const restRaw = parseInt($('.pl-brest', blk).value, 10);
-    blocks.push({ name: bname, eq: $('.pl-beq', blk).value.trim(), rest: isNaN(restRaw) ? 90 : Math.max(30, Math.min(600, restRaw)), sets: sets });
-  });
-  if (!blocks.length) { toast('Добавь хотя бы одно упражнение с подходами.', 'ri-error-warning-line'); return; }
-  customPlan = { name: name, blocks: blocks };
-  saveStore();
-  refreshCustom();
-  closeBuilder();
-  toast('План сохранён — он в четвёртой карточке.', 'ri-checkbox-circle-fill');
-});
-function refreshCustom() {
-  renderCustomPanel();
-  bindRows($('#panel-custom'));
-  bindEq($('#panel-custom'));
-  updateProgress('custom');
-  updateCustomCard();
-}
-
-/* ================= ДАННЫЕ · БЭКАП ================= */
-function importCode(str) {
-  try {
-    let s = String(str).trim().replace(/^ARES[12]\./, '');
-    if (!s) return false;
-    unpackState(b64urlD(s));
-    saveStore();
-    applyStore();
-    refreshCustom();
-    return true;
-  } catch (e) { return false; }
-}
-function openData() {
-  const st = $('#datStatus');
-  st.textContent = LS_OK
-    ? 'СОХРАНЕНИЕ В БРАУЗЕРЕ: РАБОТАЕТ. ПРОГРЕСС ЖИВЁТ САМ — КОД НИЖЕ ДЕРЖИ КАК СТРАХОВКУ И ДЛЯ ПЕРЕНОСА.'
-    : 'ХРАНЕНИЕ ЗАКРЫТО (ПРЕДПРОСМОТР / ПРИВАТНЫЙ РЕЖИМ). ПОСЛЕ ЗАКРЫТИЯ СТРАНИЦЫ ДАННЫЕ СТИРАЮТСЯ — КОПИРУЙ КОД ПЕРЕД ВЫХОДОМ И ВСТАВЛЯЙ ПОСЛЕ ОТКРЫТИЯ.';
-  st.classList.toggle('bad', !LS_OK);
-  $('#datOut').value = makeCode();
-  $('#datIn').value = '';
-  dataEl.classList.add('open'); refreshLock();
-}
-function closeData() { dataEl.classList.remove('open'); refreshLock(); }
- $('#datClose').addEventListener('click', closeData);
-dataEl.addEventListener('click', e => { if (e.target === dataEl) closeData(); });
- $('#datCopy').addEventListener('click', () => copyText($('#datOut').value, 'код данных'));
- $('#datApply').addEventListener('click', () => {
-  if (importCode($('#datIn').value)) { toast('Данные восстановлены.', 'ri-checkbox-circle-fill'); closeData(); }
-  else toast('Код не распознан — проверь, что скопирован целиком.', 'ri-error-warning-line');
-});
-
-/* ================= ГЛОБАЛЬНЫЕ КЛИКИ / ESC ================= */
-document.addEventListener('click', e => {
-  const pe = e.target.closest('[data-planedit]');
-  if (pe) { openBuilder(); return; }
-  const g = e.target.closest('[data-gym]');
-  if (g) { if (gym) closeGym(); openGym(g.dataset.gym); return; }
-  const rp = e.target.closest('[data-report]');
-  if (rp) { openReport(rp.dataset.report); return; }
-  const dd = e.target.closest('[data-data]');
-  if (dd) openData();
-});
-document.addEventListener('keydown', e => {
-  if (e.key !== 'Escape') return;
-  if (reportEl.classList.contains('open')) closeReport();
-  else if (planEl.classList.contains('open')) closeBuilder();
-  else if (dataEl.classList.contains('open')) closeData();
-  else if (gym) closeGym();
-  else if (document.body.classList.contains('menu-open')) {
-    document.body.classList.remove('menu-open');
-    $('#burger').setAttribute('aria-expanded', 'false');
-    refreshLock();
-  }
-});
-
-/* ================= ЛЕГЕНДЫ ================= */
-const LEGENDS = [
-  ['ШВАРЦЕНЕГГЕР', '7× МИСТЕР ОЛИМПИЯ'],
-  ['КОУЛМАН',      '8× МИСТЕР ОЛИМПИЯ'],
-  ['САРЫЧЕВ',      'ЖИМ ЛЁЖА — 335 КГ'],
-  ['ХЕЙНИ',        '8× МИСТЕР ОЛИМПИЯ'],
-  ['ЙЕТС',         '6× МИСТЕР ОЛИМПИЯ'],
-  ['ЗЕЙН',         '3× МИСТЕР ОЛИМПИЯ'],
-  ['УИЛЕР',        'ЛЕГЕНДА ЭСТЕТИКИ']
-];
-(function renderLegends() {
-  const items = LEGENDS.map(([n, r], i) =>
-    `<span class="legm"><span class="lm-name ${i % 2 ? 'st' : ''}">${n}</span><span class="lm-rec">${r}</span></span><i class="dm"></i>`
-  ).join('');
-  $('#legTrack').innerHTML = `<div class="bm-group">${items}</div><div class="bm-group">${items}</div>`;
-})();
-
-/* ================= НАВИГАЦИЯ ================= */
-const nav = $('#nav');
-addEventListener('scroll', () => nav.classList.toggle('scrolled', scrollY > 8), { passive: true });
- $('#burger').addEventListener('click', () => {
-  document.body.classList.toggle('menu-open');
-  $('#burger').setAttribute('aria-expanded', document.body.classList.contains('menu-open'));
-  refreshLock();
-});
- $$('.mmenu a, .mmenu .m-close').forEach(el =>
-  el.addEventListener('click', () => { document.body.classList.remove('menu-open'); refreshLock(); }));
-
-if (HAS_IO) {
-  const linkMap = {};
-  $$('.nav-links a').forEach(a => linkMap[a.getAttribute('href').slice(1)] = a);
-  const secIO = new IntersectionObserver(es => es.forEach(e => {
-    const l = linkMap[e.target.id];
-    if (l && e.isIntersecting) {
-      $$('.nav-links a').forEach(x => x.classList.remove('active'));
-      l.classList.add('active');
-    }
-  }), { rootMargin: '-45% 0px -50% 0px' });
-  ['programs', 'iron', 'support', 'nutrition', 'glossary', 'contacts'].forEach(id => {
-    const el = document.getElementById(id); if (el) secIO.observe(el);
-  });
-}
-
-/* ================= ПИТАНИЕ ================= */
-(function initNutrition() {
-  const W = $('#nutWeight'); if (!W) return;
-  const out = { p: $('#mP'), f: $('#mF'), c: $('#mC'), k: $('#mK') };
-  const notesEl = $('#nutNotes'), goalEl = $('#nutGoalNote');
-  const g = n => Math.round(n);
-  let goal = 'recomp';
-  const DATA = {
-    recomp: {
-      calc(w) {
-        const p = 2.5*w, f = 0.8*w, c = 3.5*w;
-        return { p: g(p)+'', f: g(f)+'', c: g(c)+'', k: Math.round(p*4 + c*4 + f*9) };
-      },
-      notes: [
-        'Белки — 2,5 г на кг веса: фундамент мышц.',
-        'Жиры — 0,8 г на кг. Если комфортно — можно 0,5–0,6 г/кг.',
-        'Углеводы — 3,5 г на кг: энергия на тренировки и восстановление.'
-      ],
-      goal: 'На своей рекомпозиции я часть дней специально урезал углеводы — можно делать так же. Но следи за силами на тренировке: если копится усталость — углей нужно больше.'
-    },
-    gain: {
-      calc(w) {
-        const p = 2.5*w, f = 0.8*w, c1 = 4.2*w, c2 = 5*w;
-        return { p: g(p)+'', f: g(f)+'', c: g(c1)+'–'+g(c2), k: Math.round(p*4 + f*9 + (c1+c2)/2*4) };
-      },
-      notes: [
-        'Белки — 2,5 г на кг веса.',
-        'Жиры — как на рекомпозиции: 0,8 г/кг (если комфортно — 0,5–0,6).',
-        'Углеводы — 4,2–5 г на кг: главный мотор набора.'
-      ],
-      goal: 'Весь набор крутится вокруг углеводов: белки и жиры держишь стабильными — играешь цифрой углей под темп роста веса.'
-    },
-    cut: {
-      calc(w) {
-        const p1 = 2.5*w, p2 = 3*w, f1 = 0.5*w, f2 = 0.6*w, c1 = 2*w, c2 = 2.4*w;
-        return { p: g(p1)+'–'+g(p2), f: g(f1)+'–'+g(f2), c: g(c1)+'–'+g(c2),
-                 k: Math.round((p1+p2)/2*4 + (f1+f2)/2*9 + (c1+c2)/2*4) };
-      },
-      notes: [
-        'Белки — 2,5–3 г на кг: держим много, чтобы мышцы не ушли.',
-        'Жиры — 0,5–0,6 г на кг. Ниже — гормональная система может сбоить.',
-        'Углеводы — 2–2,4 г на кг.'
-      ],
-      goal: 'На сушке главное — чтобы силы хватало на повседневные дела. О прогрессе весом в зале стоит позабыть: будет очень тяжело. Это норма сушки, а не отклонение.'
-    }
-  };
-  function render() {
-    const w = parseFloat(String(W.value).replace(',', '.'));
-    if (!w || w < 20 || w > 400) {
-      out.p.innerHTML = '—<i>г</i>'; out.f.innerHTML = '—<i>г</i>'; out.c.innerHTML = '—<i>г</i>';
-      out.k.textContent = '—';
-      return;
-    }
-    const d = DATA[goal].calc(w);
-    out.p.innerHTML = d.p + '<i>г</i>';
-    out.f.innerHTML = d.f + '<i>г</i>';
-    out.c.innerHTML = d.c + '<i>г</i>';
-    out.k.textContent = d.k.toLocaleString('ru-RU');
-    notesEl.innerHTML = DATA[goal].notes.map(t =>
-      '<div class="nut-note"><i class="ri-corner-down-right-line"></i><span>' + t + '</span></div>').join('');
-    goalEl.textContent = DATA[goal].goal;
-  }
-  $$('.nut-tabs .gy-chip').forEach(b => b.addEventListener('click', () => {
-    goal = b.dataset.goal;
-    $$('.nut-tabs .gy-chip').forEach(x => x.classList.toggle('on', x === b));
-    render();
-  }));
-  W.addEventListener('input', render);
-  render();
-})();
-
-/* ================= TELEGRAM: форма обращения ================= */
- $('#cmSend').addEventListener('click', () => {
-  const ta = $('#cmText'), msg = ta.value.trim();
-  if (!msg) { toast('Сначала напиши сообщение.', 'ri-error-warning-line'); return; }
-  try { if (navigator.clipboard) navigator.clipboard.writeText(msg); } catch (e) {}
-  window.open('https://t.me/RBares1337?text=' + encodeURIComponent(msg), '_blank', 'noopener');
-  toast('Открываю Telegram — текст будет в поле сообщения (копия в буфере).', 'ri-telegram-fill');
-});
-
-/* ================= КОПИРОВАНИЕ ================= */
-function copyText(text, label) {
-  const done = () => toast('Скопировано: ' + label, 'ri-check-double-line');
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(text).then(done).catch(() => fallback());
-  } else fallback();
-  function fallback() {
-    const ta = document.createElement('textarea');
-    ta.value = text; document.body.appendChild(ta); ta.select();
-    try { document.execCommand('copy'); done(); } catch (_) { toast(text); }
-    ta.remove();
-  }
-}
- $$('.copy-btn').forEach(b => b.addEventListener('click', () => copyText(b.dataset.copy, b.dataset.copy)));
-
- $('#toTop').addEventListener('click', () => scrollTo({ top: 0, behavior: PRM ? 'auto' : 'smooth' }));
-
-/* ================= PWA (офлайн) ================= */
-(function initPWA() {
-  if ('serviceWorker' in navigator && location.protocol === 'https:') {
-    addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
-  }
-})();
-
-/* подсказка, если хранение закрыто */
-if (!LS_OK) setTimeout(() =>
-  toast('Хранение закрыто (предпросмотр). Прогресс переживёт перезакрытие только через код «ДАННЫЕ · БЭКАП».', 'ri-database-2-line'), 2600);
-
-/* ================= ФОТОКАРТОЧКА ТРЕНИРОВКИ ================= */
-function wrapText(x, text, font, maxW) {
-  x.font = font;
-  const words = String(text).split(/\s+/).filter(Boolean);
-  const lines = []; let cur = '';
-  for (const w of words) {
-    const t = cur ? cur + ' ' + w : w;
-    if (x.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; }
-    else cur = t;
-  }
-  if (cur) lines.push(cur);
-  return lines.length ? lines : [''];
-}
-async function renderCardJPEG(pid) {
-  try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (e) {}
-  const p = getProg(pid);
-  const rows = listRows(pid);
-  let done = 0; rows.forEach(r => { if ($('.ck', r).checked) done++; });
-  const ton = computeTonnage(pid);
-  const now = new Date();
-  const when = now.toLocaleDateString('ru-RU') + ' ' + now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-
-  const W = 1080, MAXH = 4200, M = 72, CW = W - M * 2;
-  const c = document.createElement('canvas'); c.width = W; c.height = MAXH;
-  const x = c.getContext('2d');
-
-  x.fillStyle = '#0a0a0b'; x.fillRect(0, 0, W, MAXH);
-  const gr = x.createRadialGradient(W / 2, 240, 60, W / 2, 240, 900);
-  gr.addColorStop(0, 'rgba(225,6,0,0.16)'); gr.addColorStop(1, 'rgba(225,6,0,0)');
-  x.fillStyle = gr; x.fillRect(0, 0, W, MAXH);
-
-  let y = 100;
-  x.save(); x.translate(M + 14, y + 12); x.rotate(Math.PI / 4); x.fillStyle = '#e10600'; x.fillRect(-13, -13, 26, 26); x.restore();
-  x.textBaseline = 'alphabetic'; x.textAlign = 'left';
-  x.font = '700 72px Oswald, sans-serif';
-  x.fillStyle = '#f1efe9'; x.fillText('ARES', M + 52, y + 38);
-  const wA = x.measureText('ARES ').width;
-  x.fillStyle = '#e10600'; x.fillText('GYM', M + 52 + wA, y + 38);
-  x.textAlign = 'right';
-  x.font = '500 24px "JetBrains Mono", monospace'; x.fillStyle = '#84878d';
-  x.fillText(when, W - M, y + 14);
-  x.fillText('POWER · DISCIPLINA', W - M, y + 48);
-  x.textAlign = 'left';
-  y += 108;
-  x.fillStyle = '#e10600'; x.fillRect(M, y, CW, 4); y += 48;
-
-  x.font = '700 88px Oswald, sans-serif';
-  wrapText(x, (p.full || 'ТРЕНИРОВКА').toUpperCase(), '700 88px Oswald, sans-serif', CW).forEach(L => { x.fillStyle = '#f1efe9'; x.fillText(L, M, y); y += 92; });
-  y += 4;
-  if (p.tags) {
-    x.font = '500 26px "JetBrains Mono", monospace'; x.fillStyle = '#84878d';
-    wrapText(x, p.tags.toUpperCase(), '500 26px "JetBrains Mono", monospace', CW).forEach(L => { x.fillText(L, M, y); y += 36; });
-  }
-  y += 6;
-  x.font = '700 30px "JetBrains Mono", monospace'; x.fillStyle = '#ff3b2a';
-  x.fillText('ЗАКРЫТО ' + done + '/' + rows.length + ' ПОДХОДОВ', M, y); y += 48;
-
-  if (lastStats && lastStats.pid === pid) {
-    const chips = [['ВРЕМЯ', fmtDur(lastStats.secs)], ['ОТДЫХ', fmtDur(lastStats.rest)], ['ТОННАЖ', fmtKg(lastStats.ton.total) + ' КГ']];
-    const gap = 18, wch = (CW - gap * 2) / 3; let cx = M;
-    chips.forEach(([k, v]) => {
-      x.fillStyle = '#131315'; x.fillRect(cx, y, wch, 116);
-      x.strokeStyle = '#38383e'; x.lineWidth = 2; x.strokeRect(cx, y, wch, 116);
-      x.textAlign = 'center';
-      x.font = '600 20px "JetBrains Mono", monospace'; x.fillStyle = '#84878d'; x.fillText(k, cx + wch / 2, y + 36);
-      x.font = '700 38px Oswald, sans-serif'; x.fillStyle = '#f1efe9'; x.fillText(v, cx + wch / 2, y + 86);
-      x.textAlign = 'left';
-      cx += wch + gap;
-    });
-    y += 156;
-  } else y += 10;
-
-  let curG = null, n = 0;
-  for (const r of rows) {
-    if (y > MAXH - 460) break;
-    if (r.dataset.g !== curG) {
-      curG = r.dataset.g; n = 0; y += 20;
-      x.font = '600 40px Oswald, sans-serif'; x.fillStyle = '#f1efe9';
-      wrapText(x, r.dataset.blk.toUpperCase(), '600 40px Oswald, sans-serif', CW).forEach(L => { x.fillText(L, M, y); y += 48; });
-      const eq = editedEq(r);
-      if (eq) { x.font = '600 24px "JetBrains Mono", monospace'; x.fillStyle = '#ff3b2a'; x.fillText('· ' + eq.toUpperCase(), M, y - 12); y += 34; }
-      x.fillStyle = '#212125'; x.fillRect(M, y, CW, 2); y += 28;
-    }
-    n++;
-    const w = $('.in-w', r).value.trim(), rr = $('.in-r', r).value.trim();
-    const tech = r.dataset.tech, note = $('.s-note-in', r).value.trim(), d = $('.ck', r).checked;
-    const join = /^[0-9]/.test(w) ? '×' : ' × ';
-    x.font = '700 28px "JetBrains Mono", monospace';
-    x.fillStyle = d ? '#ff3b2a' : '#54575d';
-    x.fillText(String(n).padStart(2, '0'), M, y);
-    x.fillStyle = d ? '#f1efe9' : '#84878d';
-    const main = w + join + rr;
-    x.fillText(main, M + 64, y);
-    let extra = tech ? ' (' + tech + ')' : '';
-    if (!d) extra += ' — НЕ ВЫПОЛНЕНО';
-    if (extra) {
-      const x0 = M + 64 + x.measureText(main).width + 22;
-      x.font = '500 24px "JetBrains Mono", monospace'; x.fillStyle = '#84878d';
-      wrapText(x, extra, '500 24px "JetBrains Mono", monospace', Math.max(W - M - x0, 320)).forEach((L, i) => { x.fillText(L, i ? M + 64 : x0, y + i * 32); });
-      y += Math.max(36, 32 * wrapText(x, extra, '500 24px "JetBrains Mono", monospace', Math.max(W - M - x0, 320)).length - 4);
-    } else y += 36;
-    if (note) {
-      x.font = '500 22px "JetBrains Mono", monospace'; x.fillStyle = '#6a6d73';
-      wrapText(x, '— ' + note, '500 22px "JetBrains Mono", monospace', CW - 64).forEach(L => { x.fillText(L, M + 64, y); y += 30; });
-      y += 6;
-    }
-  }
-
-  if (ton.blocks.length && y < MAXH - 560) {
-    y += 26;
-    x.fillStyle = '#e10600'; x.fillRect(M, y, CW, 3); y += 42;
-    x.font = '700 26px "JetBrains Mono", monospace'; x.fillStyle = '#ff3b2a';
-    x.fillText('ТОННАЖ ПО БЛОКАМ', M, y); y += 46;
-    x.font = '500 26px "JetBrains Mono", monospace';
-    ton.blocks.forEach(b => {
-      if (y > MAXH - 220) return;
-      x.textAlign = 'left'; x.fillStyle = '#b9bcc2';
-      const nm = wrapText(x, b.name, '500 26px "JetBrains Mono", monospace', CW - 420)[0];
-      x.fillText(nm, M, y);
-      x.textAlign = 'right'; x.fillStyle = '#f1efe9';
-      x.fillText(fmtKg(b.kg) + ' кг · ' + b.n + ' подх.', W - M, y);
-      x.textAlign = 'left';
-      y += 38;
-    });
-  }
-
-  y += 32;
-  x.fillStyle = '#e10600'; x.fillRect(M, y, CW, 3); y += 38;
-  x.font = '600 24px "JetBrains Mono", monospace'; x.fillStyle = '#84878d';
-  x.fillText('— ARES GYM · ЖЕЛЕЗО PANATTA · MADE IN ITALY', M, y); y += 42;
-
-  const H = Math.min(MAXH, Math.ceil(y) + 56);
-  const out = document.createElement('canvas'); out.width = W; out.height = H;
-  out.getContext('2d').drawImage(c, 0, 0, W, H, 0, 0, W, H);
-  return out.toDataURL('image/jpeg', 0.92);
-}
-async function sendPhotoCard() {
-  const pid = reportPid;
-  if (!pid) { toast('Сначала открой отчёт тренировки.', 'ri-error-warning-line'); return; }
-  const btn = $('#repPhoto'); btn.disabled = true;
-  toast('Рисую карточку…', 'ri-image-2-line');
-  try {
-    const b64 = await renderCardJPEG(pid);
-    const payload = (TG_SESSION.mode === 'tg' && TG_SESSION.initData)
-      ? { initData: TG_SESSION.initData, b64: b64 }
-      : { token: localStorage.getItem('ARES_TOKEN_V1') || '', b64: b64 };
-    const r = await fetch(BOT_API + '/api/photo', { method: 'POST',
-      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    const j = await r.json().catch(() => ({}));
-    if (r.ok && j.ok) toast('Фотокарточка улетела в Telegram.', 'ri-telegram-fill');
-    else if (j.reason === 'rate') toast('Слишком часто — подожди минуту и попробуй снова.', 'ri-error-warning-line');
-    else if (j.reason === 'denied' || r.status === 403) toast('Сессия истекла — обнови страницу и введи код заново.', 'ri-error-warning-line');
-    else toast('Не отправилось. Проверь доступ или отправь отчёт текстом.', 'ri-error-warning-line');
-  } catch (e) {
-    toast('Не получилось нарисовать карточку.', 'ri-error-warning-line');
-  }
-  btn.disabled = false;
-}
-
-/* ================= MINI APP: доступ + баны + техработы + блоки ================= */
-const BOT_API = 'https://ares-gym-bot.maks222berg.workers.dev';
-const TG_SESSION = { mode: null, initData: null, name: null, blocks: {} };
-window.ARES_BLOCKS = {};
-
-(function initGate() {
-  const wa = window.Telegram && window.Telegram.WebApp;
-  if (wa) { try { wa.ready(); wa.expand(); } catch (e) {} }
-  const gate = $('#gateModal'), body = $('#gateBody');
-  let tmIv = null, rcIv = null;
-  const show = html => { body.innerHTML = html; gate.classList.add('open'); refreshLock(); };
-  const hide = () => {
-    if (tmIv) { clearInterval(tmIv); tmIv = null; }
-    if (rcIv) { clearInterval(rcIv); rcIv = null; }
-    gate.classList.remove('open'); refreshLock();
-  };
-
-  function countdown(until) {
-    if (tmIv) { clearInterval(tmIv); tmIv = null; }
-    const tick = () => {
-      const e = document.getElementById('gateTm'); if (!e) return;
-      const d = until - Date.now();
-      if (d <= 0) { e.textContent = 'разблокировка…'; if (tmIv) { clearInterval(tmIv); tmIv = null; } setTimeout(() => location.reload(), 2000); return; }
-      const s = Math.ceil(d / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60;
-      e.textContent = (h ? h + ' ч ' : '') + (m ? m + ' мин ' : '') + x + ' с';
-    };
-    tick(); tmIv = setInterval(tick, 1000);
-  }
-  function startRecheck(clearFn) {
-    if (rcIv) clearInterval(rcIv);
-    rcIv = setInterval(async () => {
-      if (!gate.classList.contains('open')) { if (rcIv) { clearInterval(rcIv); rcIv = null; } return; }
-      try {
-        const wa2 = window.Telegram && window.Telegram.WebApp;
-        const pay = (wa2 && wa2.initData) ? { initData: wa2.initData } : { token: localStorage.getItem('ARES_TOKEN_V1') || '' };
-        const r = await fetch(BOT_API + '/api/auth', { method: 'POST',
-          headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(pay) });
-        if (!r.ok) return;
-        const d = await r.json().catch(() => ({}));
-        if (clearFn(d)) location.reload();
-      } catch (e) {}
-    }, 20000);
-  }
-  function blockScreen(kind, reason, until, clearFn) {
-    const t = kind === 'ban' ? 'ДОСТУП ПРИОСТАНОВЛЕН' : 'ТЕХ РАБОТЫ';
-    show(`
-      <span class="dat-label" style="color:var(--red-hi)">${t}</span>
-      ${reason ? `<p class="dat-p"><b style="color:var(--txt)">${escA(reason)}</b></p>` : ''}
-      <span class="dat-label">ДО РАЗБЛОКИРОВКИ</span>
-      <p class="dat-p" style="font:700 26px var(--fh);color:var(--red-hi)" id="gateTm">…</p>`);
-    if (until) countdown(until);
-    else { const e = document.getElementById('gateTm'); if (e) e.textContent = 'до решения владельца'; }
-    if (clearFn) startRecheck(clearFn);
-  }
-  window.aresShowBlock = pid => {
-    const b = TG_SESSION.blocks[pid]; if (!b) return;
-    blockScreen('lock', b.reason, b.until, d => !(d.blocks && d.blocks[pid]));
-  };
-  function applyBlocks(blocks) {
-    window.ARES_BLOCKS = blocks || {}; TG_SESSION.blocks = blocks || {};
-    Object.keys(window.ARES_BLOCKS).forEach(pid => {
-      const b = window.ARES_BLOCKS[pid];
-      if (!b || (b.until && b.until <= Date.now())) return;
-      const card = document.querySelector('.pcard[data-target="' + pid + '"]');
-      if (card && !card.querySelector('.pc-badge')) {
-        const sp = document.createElement('span');
-        sp.className = 'pc-badge'; sp.textContent = 'НА ТЕХ РАБОТАХ';
-        card.appendChild(sp);
-      }
-    });
-  }
-  function denyScreen() {
-    show(`
-      <span class="dat-label">ДОСТУП ЗАКРЫТ</span>
-      <p class="dat-p">ARES GYM — клуб по приглашению. Открой бота и нажми <b>/start</b> — владелец получит твой ID и откроет доступ.</p>
-      <a class="btn-fin" href="https://t.me/AresGYM_app" target="_blank" rel="noopener" style="justify-content:center"><i class="ri-telegram-fill"></i> ОТКРЫТЬ БОТА</a>`);
-  }
-  /* экран кода: err — неверный код; blocked — лимит попыток; tokenDead — сессия истекла */
-  function codeScreen(err, tokenDead, blocked) {
-    show(`
-      <span class="dat-label">КОД ДОСТУПА</span>
-      <p class="dat-p">${blocked
-        ? 'Слишком много неверных попыток с этого адреса — подожди час или войди через Telegram.'
-        : tokenDead
-        ? 'Сессия истекла (токен живёт 30 дней) — введи код заново, он выдаст новый токен.'
-        : 'Сайт открыт вне Telegram — введи код доступа. Один раз, запомнится.'}</p>
-      <input class="dat-in" id="gateCode" autocomplete="off" autocapitalize="off" autocorrect="off" placeholder="код" spellcheck="false">
-      ${err ? '<span class="dat-warn" style="color:var(--red-hi)">Неверный код — попробуй ещё.</span>' : ''}
-      <div class="dat-actions"><button class="btn-fin" id="gateOk"><i class="ri-check-line"></i> ВОЙТИ</button></div>`);
-    $('#gateOk').addEventListener('click', async () => {
-      const code = $('#gateCode').value.trim(); if (!code) return;
-      try {
-        const r = await fetch(BOT_API + '/api/auth', { method: 'POST',
-          headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) });
-        const d = await r.json().catch(() => ({}));
-        if (r.ok && d.ok && d.token) {
-          localStorage.setItem('ARES_TOKEN_V1', d.token);
-          localStorage.removeItem('ARES_CODE_V1');
-          localStorage.removeItem('ARES_TG_OK_V1');
-          if (await handleState(d, 'code', null)) { hide(); toast('Доступ открыт — сессия на 30 дней.', 'ri-checkbox-circle-fill'); }
-          return;
-        }
-        if (r.status === 429) { codeScreen(false, false, true); return; }
-        codeScreen(true, false, false);
-      } catch (e) { toast('Сервер недоступен — проверь связь.', 'ri-error-warning-line'); }
-    });
-  }
-  async function handleState(d, mode, initData) {
-    if (d.ban) { blockScreen('ban', d.ban.reason, d.ban.until, x => !x.lock && !x.ban); return false; }
-    if (d.lock) { blockScreen('lock', d.lock.reason, d.lock.until, x => !x.lock && !x.ban); return false; }
-    TG_SESSION.mode = mode; TG_SESSION.initData = initData || null;
-    TG_SESSION.name = d.user && d.user.name;
-    applyBlocks(d.blocks || {});
-    startHeartbeat(initData);
-    return true;
-  }
-  function startHeartbeat(initData) {
-    if (!initData) return;
-    const BEAT = 60;
-    setInterval(() => {
-      if (document.visibilityState !== 'visible') return;
-      try {
-        fetch(BOT_API + '/api/beat', { method: 'POST', keepalive: true,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ initData: initData, seconds: BEAT }) }).catch(function(){});
-      } catch (e) {}
-    }, BEAT * 1000);
-  }
-  (async function run() {
-    const initData = wa ? (wa.initData || '') : '';
-    try {
-      if (initData) {
-        /* v6.1: шлём устройство (userAgent + userAgentData) воркеру для /activity */
-        let uad = null;
-        try {
-          if (navigator.userAgentData && navigator.userAgentData.getHighEntropyValues)
-            uad = await navigator.userAgentData.getHighEntropyValues(['model', 'platform', 'platformVersion']);
-        } catch (e) { uad = null; }
-        const r = await fetch(BOT_API + '/api/auth', { method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ initData: initData, userAgent: navigator.userAgent || '', userAgentData: uad }) });
-        if (r.ok) { const d = await r.json().catch(() => ({})); await handleState(d, 'tg', initData); return; }
-        denyScreen(); return;
-      }
-      const token = localStorage.getItem('ARES_TOKEN_V1');
-      if (token) {
-        const r = await fetch(BOT_API + '/api/auth', { method: 'POST',
-          headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token }) });
-        const d = await r.json().catch(() => ({}));
-        if (r.ok && d.ok) { await handleState(d, 'code', null); return; }
-        /* токен умер/отозван → чистим и просим код */
-        localStorage.removeItem('ARES_TOKEN_V1');
-        codeScreen(false, true, false);
-        return;
-      }
-    } catch (e) { return; }
-    codeScreen(false, false, false);
-  })();
-
-  $('#repSendTG').addEventListener('click', async () => {
-    const report = $('#reportText').textContent.trim();
-    if (!report) { toast('Отчёт пуст.', 'ri-error-warning-line'); return; }
-    const payload = { report };
-    if (TG_SESSION.mode === 'tg' && TG_SESSION.initData) payload.initData = TG_SESSION.initData;
-    else { const t = localStorage.getItem('ARES_TOKEN_V1'); if (t) payload.token = t; }
-    const btn = $('#repSendTG'); btn.disabled = true;
-    try {
-      const r = await fetch(BOT_API + '/api/report', { method: 'POST',
-        headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      if (r.ok) toast('Отчёт улетел в Telegram.', 'ri-telegram-fill');
-      else {
-        let m = 'Не отправилось — доступ не подтверждён.';
-        try { const j = await r.json();
-          if (j.reason === 'banned') m = 'Ты в бане' + (j.msg ? ': ' + j.msg : '') + '. Отчёт не принят — скопируй его текст.';
-          if (j.reason === 'lock') m = 'Техработы' + (j.msg ? ': ' + j.msg : '') + '. Отчёт не принят — скопируй текст, отправишь после открытия.';
-          if (j.reason === 'rate') m = 'Слишком часто — подожди полминуты и попробуй снова.';
-          if (j.reason === 'denied') m = 'Сессия истекла — обнови страницу и введи код заново.';
-        } catch (e) {}
-        toast(m, 'ri-error-warning-line');
-      }
-    } catch (e) {
-      toast('Сервер недоступен — скопируй отчёт вручную.', 'ri-error-warning-line');
-    }
-    btn.disabled = false;
-  });
-
-  $('#repPhoto').addEventListener('click', sendPhotoCard);
-})();
-
-window.__aresReady = true;
 </script>
 </body>
-  </html>
+</html>
