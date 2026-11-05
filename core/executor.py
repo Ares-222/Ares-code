@@ -6,6 +6,7 @@
 """
 import asyncio
 import os
+import re
 import shlex
 import signal
 import subprocess
@@ -25,7 +26,19 @@ WHITELIST = {
 }
 
 # Подстроки, которые запрещены в команде даже внутри белого списка
-FORBIDDEN_SUBSTR = (".env", "id_rsa", "/.ssh", "ares.db", "/proc/", "/sys/")
+FORBIDDEN_SUBSTR = ("id_rsa", "/.ssh", "ares.db", "/proc/", "/sys/")
+# .env запрещён как ПУТЬ ("cat .env", "open('.env')"), но не как часть слов (os.environ, dotenv)
+_FORBIDDEN_ENV_RE = re.compile(r"(?:^|[\s'\"=;:,/])\.env(?![A-Za-z])")
+
+
+def _forbidden(cmd_s: str) -> str | None:
+    """Вернуть запрещённый маркер, если он есть в команде."""
+    for bad in FORBIDDEN_SUBSTR:
+        if bad in cmd_s:
+            return bad
+    if _FORBIDDEN_ENV_RE.search(cmd_s):
+        return ".env"
+    return None
 
 
 class ExecResult(dict):
@@ -43,6 +56,8 @@ _ENV = {
     "LANG": "C.UTF-8",
     "PYTHONUNBUFFERED": "1",
     "TMPDIR": str(config.WORKSPACE / ".tmp"),
+    # зависимости плагинов (pip install --target) — импорты подхватываются автоматически
+    "PYTHONPATH": str(config.WORKSPACE / ".pylib"),
 }
 
 
@@ -65,7 +80,9 @@ def _reject(cmd: str, reason: str) -> ExecResult:
 
 def _guard_paths(argv, project_dir: Path):
     """Абсолютные пути в аргументах — только внутри проекта или его рабочих каталогов."""
-    allowed_roots = [str(project_dir), str(config.WORKSPACE / ".tmp"), str(config.TRASH_DIR), str(config.ARCHIVE_DIR)]
+    allowed_roots = [str(project_dir), str(config.WORKSPACE / ".tmp"),
+                     str(config.WORKSPACE / ".pylib"),
+                     str(config.TRASH_DIR), str(config.ARCHIVE_DIR)]
     for a in argv[1:]:
         if a.startswith("/"):
             real = os.path.realpath(a)
@@ -93,15 +110,16 @@ async def run(cmd, project: str = "default", timeout: int | None = None) -> Exec
     project_dir = (config.WORKSPACE / project).resolve()
     project_dir.mkdir(parents=True, exist_ok=True)
     (config.WORKSPACE / ".tmp").mkdir(parents=True, exist_ok=True)
+    (config.WORKSPACE / ".pylib").mkdir(parents=True, exist_ok=True)
 
     # --- проверки безопасности ---
     binbase = os.path.basename(argv[0])
     if binbase not in WHITELIST:
         return _reject(cmd_s, f"запрещено: '{binbase}' нет в белом списке исполнителя")
     joined = " ".join(argv)
-    for bad in FORBIDDEN_SUBSTR:
-        if bad in joined:
-            return _reject(cmd_s, f"запрещено: доступ к '{bad}' из песочницы закрыт")
+    bad = _forbidden(joined)
+    if bad:
+        return _reject(cmd_s, f"запрещено: доступ к '{bad}' из песочницы закрыт")
     try:
         _guard_paths(argv, project_dir)
     except PermissionError as e:
