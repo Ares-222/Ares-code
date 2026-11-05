@@ -41,6 +41,7 @@ body{background:var(--bg);color:var(--white);font-family:'JetBrains Mono',ui-mon
 .wSub{color:var(--gray);font-size:10px;letter-spacing:3px;margin-top:3px}
 .wMeta{color:var(--dim);font-size:10.5px;margin-top:9px}
 .wMeta b{color:var(--gray);font-weight:600}
+#wDir,#wDir b{color:var(--red)}
 .divider{height:3px;margin:11px 0 8px;border-radius:1px;
          background:linear-gradient(90deg,var(--red) 0 76%,#2A2A30 76% 100%)}
 .wTips{color:var(--dim);font-size:9.5px;letter-spacing:1px}
@@ -129,8 +130,8 @@ body{background:var(--bg);color:var(--white);font-family:'JetBrains Mono',ui-mon
     <div class="gem"></div>
     <div class="wTitle">ARES <b>CODE</b></div>
     <div class="wSub">TERMINAL · AGENT</div>
-    <div class="wMeta" id="wModel">GLM-4.7-Flash · failover → Gemini → OpenRouter → OmniRoute</div>
-    <div class="wMeta" id="wDir">workspace/<b>default</b></div>
+    <div class="wMeta" id="wModel">ARES CODE V1</div>
+    <div class="wMeta" id="wDir">workspace/<b>root</b></div>
     <div class="divider"></div>
     <div class="wTips">SHELL — прямые команды · CODE — план→run→fix · CHAT — вопросы · 📦 архив · ❄ холод</div>
   </div>
@@ -165,7 +166,7 @@ try { tg.ready(); tg.expand(); tg.setHeaderColor('#0A0A0B'); tg.setBackgroundCol
 const INIT = (tg && tg.initData) || '';
 const $ = id => document.getElementById(id);
 const term = $('term');
-let MODE='CHAT', POWER='AUTO', PROJECT='default', busy=false, t0=0, lastTok=0, lastProv='';
+let MODE='CHAT', POWER='AUTO', PROJECT='root', busy=false, t0=0, lastTok=0, lastProv='';
 
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 async function api(path, opts={}){
@@ -224,7 +225,7 @@ async function send(){
   if (busy) return;
   const inp=$('inp'); const text=inp.value.trim(); if(!text) return;
   inp.value=''; busy=true; t0=performance.now(); lastTok=0; lastProv='';
-  line((MODE==='SHELL' ? 'ares:~/'+PROJECT+'$ ' : (MODE==='CODE'?'◆ code❯ ':'◆ ❯ '))+text, 'gray');
+  line((MODE==='SHELL' ? 'ares:~/'+PROJECT+'$ ' : (MODE==='CODE'?'◆ code❯ ':'◆ ❯ '))+text, MODE==='SHELL'?'red':'gray');
   try{
     const r = await api('/api/chat',{method:'POST',body:JSON.stringify({mode:MODE,text,power:POWER,project:PROJECT})});
     const rd=r.body.getReader(), dec=new TextDecoder(); let buf='';
@@ -245,9 +246,16 @@ async function send(){
 }
 function fmtK(n){ n=+n||0; return n>=1000 ? (n/1000).toFixed(1)+'k' : String(n); }
 
+/* диагностика отказа: показываем, кем сервер видит пользователя */
+async function deny(icon){
+  try{ const w=await japi('/api/whoami',{method:'POST',body:'{}'});
+    line(`${icon} отказ · твой id=${w.id} · ${w.owner?'владелец ✔':'НЕ владелец'} · одобрен: ${w.approved?'да':'нет'}`, w.owner?'red':'dim');
+  }catch(e){ line(icon+' нет связи','red'); }
+}
+
 function handle(ev){
   switch(ev.t){
-    case 'provider': closeDelta(); lastProv=ev.s; line('» '+ev.s,'dim'); break;
+    case 'provider': closeDelta(); lastProv='ares:ares-v1-max'; line('» ares:ares-v1-max','dim'); break;
     case 'delta': delta(ev.s); break;
     case 'reason': reason(ev.s); break;
     case 'mode': line('· '+ev.s,'dim'); break;
@@ -312,13 +320,14 @@ $('bPower').onclick=()=>{
 
 /* ---------- quick-действия ---------- */
 $('bArch').onclick=async()=>{ try{ const d=await japi('/api/archive',{method:'POST',body:JSON.stringify({project:PROJECT})});
-  line(`📦 ${d.archive.project} · ${fmtK(d.archive.size)}Б · sha${d.archive.sha256.slice(0,10)}`,'dim'); }catch(e){ line('📦 только для владельца','dim'); } };
+  line(`📦 ${d.archive.project} · ${fmtK(d.archive.size)}Б · sha${d.archive.sha256.slice(0,10)}`,'dim'); }catch(e){ deny('📦'); } };
 $('bCold').onclick=async()=>{ try{ const d=await japi('/api/cold',{method:'POST',body:JSON.stringify({project:PROJECT})});
-  line(d.ok? `❄ ${d.result.mailbox} · частей ${d.result.parts}` : '❄ '+d.result.error, d.ok?'dim':'red'); }catch(e){ line('❄ только для владельца','dim'); } };
+  line(d.ok? `❄ ${d.result.mailbox} · частей ${d.result.parts}` : '❄ '+d.result.error, d.ok?'dim':'red'); }catch(e){ deny('❄'); } };
 $('bClean').onclick=async()=>{ try{ const d=await japi('/api/cleanup',{method:'POST',body:JSON.stringify({dry_run:true})});
-  outbox('🧹 убралось бы:\n'+(d.would_move.join('\n')||'(ничего)')+'\nактивный защищён: '+d.protected); }catch(e){ line('🧹 только для владельца','dim'); } };
+  outbox('🧹 убралось бы:\n'+(d.would_move.join('\n')||'(ничего)')+'\nактивный защищён: '+d.protected); }catch(e){ deny('🧹'); } };
 $('bStat').onclick=async()=>{ try{ const d=await japi('/healthz');
-  const p=Object.entries(d.providers||{}).map(([k,v])=>`${k}:${v.ok?'✅':'⚠️'}`).join(' · ')||'нет ключей';
+  const v=Object.values(d.providers||{});
+  const p=v.length? 'ares:'+(v.some(x=>x.ok)?'✅':'⚠️') : 'нет ключей';
   line(`⚡ ${d.budget.hud} [${d.budget.state}] · ${p}`,'dim'); }catch(e){ line('⚡ нет связи','red'); } };
 
 /* ---------- ввод ---------- */
@@ -342,7 +351,8 @@ $('bReq').onclick=async()=>{
     return;
   }
   $('app').classList.remove('hidden');
-  PROJECT=w.project||PROJECT;
+  PROJECT=(w.project && w.project!=='default') ? w.project : PROJECT;  // 'default' сервера не перекрывает корень
+  line(`· ты: id=${w.id} · ${w.owner?'владелец':'НЕ владелец'} · доступ: ${w.approved?'открыт':'есть'}`,'dim');
   $('wDir').innerHTML='workspace/<b></b>'; $('wDir').querySelector('b').textContent=PROJECT;
   hud(); setInterval(hud, 5000);
   $('inp').focus();
