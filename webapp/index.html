@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- ═══ ARES CODE v6.1 · webapp/index.html · терминал в стиле Claude Code ═══ -->
+<!-- ═══ ARES CODE v7 · webapp/index.html · терминал 1:1 Claude Code (black-red) ═══ -->
 <html lang="ru">
 <head>
 <meta charset="utf-8">
@@ -8,91 +8,89 @@
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  /* фирменная палитра: ромб #D00504, кнопка #CB2D1E, фон #060606 */
-  --bg:#080809; --panel:#121214; --panel2:#17171A; --border:#26262B;
+  --bg:#060607; --panel:#121214; --panel2:#17171A; --border:#26262B;
   --red:#DC0F0C; --red-deep:#A80B08;
   --white:#F2F0EC; --gray:#9A9AA0; --dim:#5F5F66; --ok:#3ADB76;
+  --quote:#1E1E20;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%}
 body{background:var(--bg);color:var(--white);font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;
-     font-size:12.5px;line-height:1.55;overflow:hidden}
-#app{display:flex;flex-direction:column;height:100vh;padding:8px 8px 8px;gap:6px}
+     font-size:13px;line-height:1.5;overflow:hidden}
+#app{display:flex;flex-direction:column;height:100vh;padding:10px 14px 8px}
 .hidden{display:none!important}
-.scan{position:fixed;inset:0;pointer-events:none;z-index:40;
-      background:repeating-linear-gradient(0deg,rgba(255,255,255,.012) 0 1px,transparent 1px 3px)}
 
-/* ---------- верхняя строка: бренд + система ---------- */
-#hud{display:flex;align-items:center;gap:8px;font-size:10.5px;color:var(--dim);
-     padding:2px 4px;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
-#hud::-webkit-scrollbar{display:none}
-#hud .brand{color:var(--white);font-weight:800;letter-spacing:1px;flex:0 0 auto}
-#hud .brand .sp{color:var(--red)}
-#hud .brand b{color:var(--red);font-weight:800}
-#hud .sep{color:var(--border)}
+/* ---------- статусная строка (состояния: CPU/RAM/DISK · TOK/REQ · [state]) ---------- */
+#status{font-size:10.5px;color:var(--dim);white-space:nowrap;overflow-x:auto;scrollbar-width:none;
+        padding-bottom:6px;margin-bottom:4px}
+#status::-webkit-scrollbar{display:none}
+#status b{color:var(--gray);font-weight:700}
+#status .sep{color:#2A2A30}
+#fState.st-ok{color:var(--gray)} #fState.st-warn{color:var(--ok)} #fState.st-bad{color:var(--red)}
 
-/* ---------- welcome в стиле Claude Code (уезжает после первой задачи) ---------- */
-#welcome{background:var(--panel);border:1px solid var(--border);border-radius:3px;padding:14px 15px 13px}
-.spark{font-size:24px;color:var(--red);line-height:1;margin-bottom:9px;
-       text-shadow:0 0 14px rgba(220,15,12,.55),0 0 40px rgba(220,15,12,.20)}
-.wTitle{font-size:15px;font-weight:800;letter-spacing:.5px}
-.wTitle b{color:var(--red)}
-.wMeta{color:var(--gray);font-size:10.5px;margin-top:6px}
-#wDir{color:var(--gray)} #wDir b{color:var(--red)}
-.wTips{color:var(--dim);font-size:10px;line-height:1.8;margin-top:10px;
-       border-top:1px solid var(--border);padding-top:9px}
-.wTips b{color:var(--gray);font-weight:600}
-
-/* ---------- терминал ---------- */
-#term{flex:1;overflow-y:auto;background:var(--panel);border:1px solid var(--border);border-radius:3px;
-      padding:10px 11px;scrollbar-width:thin;scrollbar-color:#2A2A30 transparent}
+/* ---------- терминал: плоский, как CLI ---------- */
+#term{flex:1;overflow-y:auto;scrollbar-width:thin;scrollbar-color:#2A2A30 transparent;padding-bottom:6px}
 .ln{white-space:pre-wrap;word-break:break-word}
 .dim{color:var(--dim)} .gray{color:var(--gray)} .red{color:var(--red)} .ok{color:var(--ok)}
-.white{color:var(--white)}
-.planbox{border:1px solid var(--border);background:var(--panel2);border-radius:3px;
-         padding:7px 10px;margin:3px 0 5px;color:#FFD9CF;font-size:11.5px;white-space:pre-wrap;word-break:break-word}
-.outbox{color:var(--gray);font-size:11.5px;margin:1px 0 4px;padding-left:5px;
+.white{color:var(--white)} .bold{font-weight:700}
+
+/* ---------- шапка-баннер: вместо осьминога — надпись ARES CODE ---------- */
+#banner{display:flex;gap:12px;align-items:flex-start;margin:4px 0 14px}
+#logo{color:var(--red);font-weight:800;font-size:15px;line-height:1.2;letter-spacing:3px;
+      border-left:3px solid var(--red);padding-left:9px;margin-top:2px;
+      text-shadow:0 0 12px rgba(220,15,12,.45)}
+.bLine{font-size:12px}
+.bLine.v{font-weight:800;font-size:13px}
+.bLine .c{color:var(--gray)}
+.bLine b{color:var(--red);font-weight:700}
+#hdrPow{cursor:pointer;user-select:none}
+#hdrPow:active{color:var(--red)}
+
+.wl{margin:2px 0}
+.wl .sp{color:var(--red)}
+
+/* ---------- сообщение пользователя: серый блок с «›» ---------- */
+.userbox{background:var(--quote);border-radius:3px;padding:9px 12px;margin:12px 0;color:var(--white);white-space:pre-wrap;word-break:break-word}
+.userbox .q{color:var(--gray);margin-right:8px}
+
+/* ---------- план ---------- */
+.planbox{border:1px solid var(--border);border-left:3px solid var(--red);background:var(--panel2);
+         border-radius:3px;padding:8px 11px;margin:4px 0 8px;color:#E8DDD8;font-size:12px;
+         white-space:pre-wrap;word-break:break-word}
+
+/* ---------- вывод инструмента: «└ …» с отступом ---------- */
+.outbox{color:var(--gray);font-size:11.5px;margin:1px 0 6px;padding-left:2px;
         white-space:pre-wrap;word-break:break-word}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:9px;vertical-align:0}
+.d-ok{background:var(--ok)} .d-bad{background:var(--red)} .d-run{background:var(--gray)}
+.tname{font-weight:700;color:var(--white)}
+.targs{color:var(--gray)}
+
+/* ---------- мышление ---------- */
 .chip{display:inline-block;border:1px dotted #3A3A40;color:var(--dim);border-radius:2px;padding:0 7px;
-      font-size:9.5px;cursor:pointer;margin:3px 0;user-select:none}
+      font-size:9.5px;cursor:pointer;margin:4px 0;user-select:none}
 .chip:active{color:var(--red)}
-.reason{border-left:2px solid #333;color:#4E4E55;font-size:11px;padding:4px 9px;margin:2px 0;white-space:pre-wrap}
-.cursor{display:inline-block;width:7px;height:13px;background:var(--red);vertical-align:-2px;
+.reason{border-left:2px solid #333;color:#4E4E55;font-size:11px;padding:4px 9px;margin:2px 0 6px;white-space:pre-wrap}
+.cursor{display:inline-block;width:8px;height:14px;background:var(--red);vertical-align:-2px;
         animation:blink 1s steps(1) infinite}
 @keyframes blink{50%{opacity:0}}
 
-/* ---------- строка ввода: «>» как в Claude Code ---------- */
-#prompt{display:flex;gap:8px;align-items:center;background:var(--panel);border:1px solid var(--border);
-        border-radius:3px;padding:9px 11px}
-#prompt:focus-within{border-color:var(--red)}
-#prompt .ps1{color:var(--red);font-weight:800;white-space:nowrap;font-size:13px}
+/* ---------- ввод: разделитель + блочный курсор, как в CLI ---------- */
+#inputwrap{margin-top:6px}
+#divider{height:1px;background:#2A2A30;margin-bottom:8px}
+#prompt{display:flex;align-items:center;gap:0;background:transparent;border:none}
+#blockCaret{color:var(--red);font-weight:700;margin-right:2px;animation:blink 1s steps(1) infinite}
 #inp{flex:1;background:transparent;border:none;outline:none;color:var(--white);font-family:inherit;
-     font-size:12.5px;caret-color:var(--red)}
-#inp::placeholder{color:#45454B}
-#bSend{background:none;color:var(--dim);border:none;font-family:inherit;font-weight:800;font-size:14px;
-       cursor:pointer;padding:2px 4px}
-#bSend:active{color:var(--red)}
+     font-size:13px;caret-color:var(--red)}
+#inp::placeholder{color:#3E3E44}
+#hint{color:#3E3E44;font-size:9.5px;letter-spacing:1px;margin-top:6px;white-space:nowrap;overflow-x:auto;scrollbar-width:none}
+#hint::-webkit-scrollbar{display:none}
+#hint b{color:var(--dim);font-weight:700}
 
-/* ---------- быстрые команды ---------- */
-#quick{display:flex;gap:6px}
-#quick button{flex:1;background:none;border:1px solid var(--border);color:var(--dim);border-radius:3px;
-  padding:7px 0;font-family:inherit;font-size:10px;letter-spacing:.5px;cursor:pointer}
-#quick button:active{color:var(--red);border-color:var(--red)}
-
-/* ---------- нижняя статусная строка (как status line в Claude Code) ---------- */
-#foot{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--dim);
-      padding:3px 4px;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
-#foot::-webkit-scrollbar{display:none}
-#foot .sep{color:var(--border)}
-#foot #fModel{color:var(--gray)}
-#foot #fPow{cursor:pointer;user-select:none;color:var(--gray)}
-#foot #fPow:active{color:var(--red)}
-.st-ok{color:var(--gray)} .st-warn{color:var(--ok)} .st-bad{color:var(--red)}
-
-/* ---------- гейт · ДОСТУП ---------- */
+/* ---------- гейт ---------- */
 #gate{position:fixed;inset:0;background:#050506;display:flex;align-items:center;justify-content:center;padding:22px;z-index:50}
 #gate .card{width:100%;max-width:420px;background:#141416;border:1px solid #26262A;border-top:3px solid var(--red);
             border-radius:3px;padding:20px 18px 22px}
@@ -109,9 +107,8 @@ body{background:var(--bg);color:var(--white);font-family:'JetBrains Mono',ui-mon
 </style>
 </head>
 <body>
-<div class="scan"></div>
 
-<!-- гейт доступа · ДОСТУП -->
+<!-- гейт доступа -->
 <div id="gate" class="hidden">
   <div class="card">
     <div class="gem"></div>
@@ -124,52 +121,40 @@ body{background:var(--bg);color:var(--white);font-family:'JetBrains Mono',ui-mon
 </div>
 
 <div id="app" class="hidden">
-  <div id="hud">
-    <span class="brand"><span class="sp">✻</span> ARES<b>◆</b>CODE</span><span class="sep">│</span>
-    <span id="hudSys">CPU —% · RAM —% · DISK —%</span>
+  <div id="status">
+    <span id="hudSys">CPU —% · RAM —% · DISK —% · up —</span><span class="sep"> │ </span>
+    <span id="fTok">TOK — · REQ —</span> <span id="fState" class="st-ok">[—]</span>
   </div>
 
-  <div id="welcome">
-    <div class="spark">✻</div>
-    <div class="wTitle">Добро пожаловать в Ares <b>Code</b></div>
-    <div class="wMeta">/help — справка · /status — состояние системы</div>
-    <div class="wMeta">cwd: <span id="wDir">workspace/<b>root</b></span></div>
-    <div class="wMeta">ARES CODE V1</div>
-    <div class="wTips">
-      опиши задачу — агент сам: <b>план → код → запуск → фикс → отчёт</b><br>
-      <b>!команда</b> — прямая shell в песочницу (например, <b>!python3 main.py</b>)<br>
-      плагины: «поставь плагин https://github.com/...» · архив и холод — кнопки внизу
+  <div id="term">
+    <div id="banner">
+      <div id="logo">ARES<br>CODE</div>
+      <div>
+        <div class="bLine v">Ares Code <span class="c">v7</span></div>
+        <div class="bLine dim">ares:ares-v1-max <span class="c">(1M context)</span></div>
+        <div class="bLine dim">ARES MAX · <span id="hdrPow">⚡AUTO</span></div>
+        <div class="bLine dim" id="cwd">workspace/<b>root</b></div>
+      </div>
     </div>
+    <div class="wl"><span class="sp">✻</span> Добро пожаловать в <b>Ares Code</b></div>
+    <div class="wl dim">/help — справка · опиши задачу — агент сам сделает</div>
+    <div style="height:10px"></div>
   </div>
 
-  <div id="term"></div>
-
-  <form id="prompt" autocomplete="off">
-    <span class="ps1" id="ps1">&gt;</span>
-    <input id="inp" placeholder="опиши задачу или спроси…">
-    <button id="bSend" type="submit">⏎</button>
-  </form>
-
-  <div id="quick">
-    <button id="bArch">/архив</button>
-    <button id="bCold">/холод</button>
-    <button id="bClean">/уборка</button>
-    <button id="bStat">/статус</button>
-  </div>
-
-  <div id="foot">
-    <span id="fModel">ares:ares-v1-max</span><span class="sep">│</span>
-    <span id="fProj">workspace/root</span><span class="sep">│</span>
-    <span id="fTok">TOK — · REQ —</span><span class="sep">│</span>
-    <span id="fState" class="st-ok">[—]</span><span class="sep">│</span>
-    <span id="fPow">⚡AUTO</span>
+  <div id="inputwrap">
+    <div id="divider"></div>
+    <form id="prompt" autocomplete="off">
+      <span id="blockCaret">█</span>
+      <input id="inp" placeholder="">
+    </form>
+    <div id="hint"><b>/help</b> · <b>/архив</b> · <b>/холод</b> · <b>/уборка</b> · <b>/статус</b> · <b>!cmd</b> — shell · <b>⚡</b> в шапке — мощность</div>
   </div>
 </div>
 
 <script>
 "use strict";
 const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-try { tg.ready(); tg.expand(); tg.setHeaderColor('#0A0A0B'); tg.setBackgroundColor('#0A0A0B'); } catch(e) {}
+try { tg.ready(); tg.expand(); tg.setHeaderColor('#060607'); tg.setBackgroundColor('#060607'); } catch(e) {}
 const INIT = (tg && tg.initData) || '';
 const $ = id => document.getElementById(id);
 const term = $('term');
@@ -185,19 +170,27 @@ async function japi(path, opts={}){ const r = await api(path,opts); return r.jso
 
 /* ---------- вывод ---------- */
 function push(el){ term.appendChild(el); if(spin) term.appendChild(spin); term.scrollTop=1e9; }
-function esc(){ const d=document.createElement('div'); d.className='ln'; push(d); return d; }
-function line(text, cls=''){ const d=esc(); d.className='ln '+cls; d.textContent=text; return d; }
+function line(text, cls=''){ const d=document.createElement('div'); d.className='ln '+cls;
+  d.textContent=text; push(d); return d; }
+function htmlLine(html, cls=''){ const d=document.createElement('div'); d.className='ln '+cls;
+  d.innerHTML=html; push(d); return d; }
 
-/* вывод инструмента: «⎿» с отступом — продолжение шага ⏺ */
+/* «└ вывод» — продолжение шага ● */
 function outbox(text){
   const ls=String(text||'').split('\n');
-  const s='⎿  '+ls[0]+(ls.length>1?'\n    '+ls.slice(1).join('\n    '):'');
-  const d=document.createElement('div'); d.className='outbox'; d.textContent=s;
-  push(d);
+  const s='└ '+ls[0]+(ls.length>1?'\n  '+ls.slice(1).join('\n  '):'');
+  const d=document.createElement('div'); d.className='outbox'; d.textContent=s; push(d);
 }
 function planbox(text){ const d=document.createElement('div'); d.className='planbox'; d.textContent=text; push(d); }
 
-/* ---------- typewriter: дельты стримятся в ОДНУ строку ---------- */
+/* сообщение пользователя серым блоком с «›» */
+function userbox(text){
+  const d=document.createElement('div'); d.className='userbox';
+  const q=document.createElement('span'); q.className='q'; q.textContent='›';
+  d.appendChild(q); d.appendChild(document.createTextNode(text)); push(d);
+}
+
+/* ---------- typewriter: дельты стримятся в одну строку ---------- */
 let dl=null, dtn=null, dbuf='', dtyping=false;
 async function typeDelta(){
   if (dtyping) return; dtyping=true;
@@ -208,20 +201,20 @@ async function typeDelta(){
   dtyping=false;
 }
 function delta(s){
-  if (spinTimer) spinStop();                       // пошёл поток текста — спиннер не нужен
-  if (!dl){ dl=esc(); dtn=document.createTextNode(''); dl.appendChild(dtn);
+  if (spinTimer) spinStop();
+  if (!dl){ dl=line(''); dtn=document.createTextNode(''); dl.appendChild(dtn);
             const c=document.createElement('span'); c.className='cursor'; dl.appendChild(c); }
   dbuf += s; typeDelta();
 }
 function closeDelta(){
   if (dl){
     const cur = dl.querySelector('.cursor'); if (cur) cur.remove();
-    if (dbuf.length && dtn) dtn.data += dbuf;      // конец стрима: дописываем остаток сразу
+    if (dbuf.length && dtn) dtn.data += dbuf;
   }
   dl=null; dtn=null; dbuf='';
 }
 
-/* ---------- reasoning: чип «мышление», по клику раскрывается ---------- */
+/* ---------- reasoning ---------- */
 let rbuf=null, rtext='', rblock=null;
 function reason(s){
   if (spinTimer) spinStop();
@@ -230,24 +223,22 @@ function reason(s){
     const chip=document.createElement('span'); chip.className='chip'; chip.textContent='🧠 мышление';
     rblock=document.createElement('div'); rblock.className='reason hidden';
     chip.onclick=()=>rblock.classList.toggle('hidden');
-    rbuf.appendChild(chip); rbuf.appendChild(rblock);
-    push(rbuf);
+    rbuf.appendChild(chip); rbuf.appendChild(rblock); push(rbuf);
   }
   rtext += s; rblock.textContent = rtext; term.scrollTop=1e9;
 }
 function resetResp(){ closeDelta(); rbuf=null; rtext=''; rblock=null; }
 
-/* ---------- спиннер Claude Code: ·✢✳∗✻✽ ---------- */
+/* ---------- спиннер: «✻ Forging… Ns» ---------- */
 const FRAMES=['·','✢','✳','∗','✻','✽','✽','✻','∗','✳','✢'];
 let spin=null, spinTimer=null, spinT0=0, spinFi=0;
 function spinStart(label){
   spinStop();
-  spin=document.createElement('div'); spin.className='ln dim';
+  spin=line(''); spin.className='ln dim';
   const s=document.createElement('span'); s.className='red'; s.textContent=FRAMES[0];
   const t=document.createTextNode(' '+label+' · 0s');
   spin.appendChild(s); spin.appendChild(t);
-  spinT0=performance.now(); spinFi=0;
-  push(spin);
+  spinT0=performance.now(); spinFi=0; push(spin);
   spinTimer=setInterval(()=>{
     spinFi++; s.textContent=FRAMES[spinFi%FRAMES.length];
     t.textContent=' '+label+' · '+Math.floor((performance.now()-spinT0)/1000)+'s';
@@ -256,17 +247,27 @@ function spinStart(label){
 }
 function spinStop(){ if(spinTimer){ clearInterval(spinTimer); spinTimer=null; } spin=null; }
 
-/* ---------- SSE ---------- */
+/* ---------- отправка: /команды · !shell · обычный агент ---------- */
 async function send(){
   if (busy) return;
   const inp=$('inp'); const text=inp.value.trim(); if(!text) return;
   inp.value=''; busy=true; t0=performance.now(); lastTok=0; lastProv='';
-  const wel=$('welcome'); if (wel) wel.remove();   // баннер «уезжает», как в Claude Code
+
+  if (text.startsWith('/')){
+    const cmd=text.toLowerCase().split(/\s+/)[0];
+    const map={'/help':cmdHelp,'/архив':doArch,'/archive':doArch,'/холод':doCold,'/cold':doCold,
+               '/уборка':doClean,'/cleanup':doClean,'/статус':doStat,'/status':doStat};
+    busy=false;
+    if (map[cmd]) { userbox(text); map[cmd](); }
+    else { userbox(text); line('✖ нет такой команды — /help','red'); }
+    $('inp').focus(); return;
+  }
+
   const shell = text.startsWith('!');
   const payload = {mode: shell?'SHELL':'AGENT',
                    text: shell ? text.slice(1).trim() : text,
                    power: POWER, project: PROJECT};
-  line(shell ? ('! '+payload.text) : ('> '+text), shell?'red':'white');
+  userbox(text);
   if (shell && !payload.text){ busy=false; return; }
   spinStart('Forging…');
   try{
@@ -282,22 +283,40 @@ async function send(){
         handle(ev);
       }
     }
-  }catch(e){ line('!! сеть: '+e.message,'red'); }
-  spinStop();
+  }catch(e){ spinStop(); line('!! сеть: '+e.message,'red'); }
+  spinStop(); closeDelta();
   const dt=((performance.now()-t0)/1000).toFixed(1);
-  line('✻ Forged for '+dt+'s'+(lastProv?' · '+lastProv:'')+(lastTok?' · +'+fmtK(lastTok)+' TOK':''),'dim');
-  line('',''); busy=false; inp.focus();
+  const tm=new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+  htmlLine('<span class="red">✳</span> Forged for '+dt+'s'+(lastTok?' · +'+fmtK(lastTok)+' TOK':'')+' · done '+tm,'dim');
+  busy=false; $('inp').focus();
 }
 function fmtK(n){ n=+n||0; return n>=1000 ? (n/1000).toFixed(1)+'k' : String(n); }
 
-/* диагностика отказа: показываем, кем сервер видит пользователя */
+/* ---------- slash-действия (бывшие кнопки) ---------- */
 async function deny(icon){
   try{ const w=await japi('/api/whoami',{method:'POST',body:'{}'});
     line(icon+' отказ · твой id='+w.id+' · '+(w.owner?'владелец ✔':'НЕ владелец')+' · одобрен: '+(w.approved?'да':'нет'), w.owner?'red':'dim');
   }catch(e){ line(icon+' нет связи','red'); }
 }
+function cmdHelp(){
+  line('✻ Ares Code — агент в терминале','dim');
+  line('опиши задачу — план → инструменты → отчёт','gray');
+  line('!команда — прямая shell в песочницу (!python3 main.py)','gray');
+  line('/архив · /холод · /уборка · /статус — действия','gray');
+  line('⚡ в шапке — мощность AUTO → FAST → MAX','gray');
+}
+async function doArch(){ try{ const d=await japi('/api/archive',{method:'POST',body:JSON.stringify({project:PROJECT})});
+  line('📦 '+d.archive.project+' · '+fmtK(d.archive.size)+'Б · sha'+d.archive.sha256.slice(0,10)+(d.sent_to_chat?' · файл в чате ⬆':''),'dim'); }catch(e){ deny('📦'); } }
+async function doCold(){ try{ const d=await japi('/api/cold',{method:'POST',body:JSON.stringify({project:PROJECT})});
+  line(d.ok? '❄ '+d.result.mailbox+' · частей '+d.result.parts : '❄ '+d.result.error, d.ok?'dim':'red'); }catch(e){ deny('❄'); } }
+async function doClean(){ try{ const d=await japi('/api/cleanup',{method:'POST',body:JSON.stringify({dry_run:true})});
+  planbox('🧹 убралось бы:\n'+(d.would_move.join('\n')||'(ничего)')+'\nактивный защищён: '+d.protected); }catch(e){ deny('🧹'); } }
+async function doStat(){ try{ const d=await japi('/healthz');
+  const v=Object.values(d.providers||{});
+  const p=v.length? (v.some(x=>x.ok)?'цепочка: ✅':'цепочка: ⚠️') : 'нет ключей';
+  line('⚡ '+d.budget.hud+' ['+d.budget.state+'] · '+p,'dim'); }catch(e){ line('⚡ нет связи','red'); } }
 
-/* ---------- обработка событий (Claude Code style) ---------- */
+/* ---------- обработка событий SSE ---------- */
 const TOOL={run:'Bash', shell:'Bash', write:'Write', edit:'Edit', read:'Read', list:'List'};
 function handle(ev){
   switch(ev.t){
@@ -307,27 +326,30 @@ function handle(ev){
     case 'reason':   reason(ev.s); break;
     case 'mode':     line('· '+ev.s,'dim'); spinStart('Forging…'); break;
     case 'note':     closeDelta(); line('· '+ev.s,'dim'); spinStart('Forging…'); break;
-    case 'plan':     closeDelta(); spinStop(); line('✻ ПЛАН','red'); planbox(ev.s); break;
+    case 'plan':     closeDelta(); spinStop(); htmlLine('<span class="red">✻</span> ПЛАН','bold'); planbox(ev.s); break;
     case 'step': {
       closeDelta(); spinStop();
       const k = TOOL[ev.kind] || (ev.kind||'tool').toUpperCase();
-      let s = '⏺ '+k+'('+(ev.s||'')+')';
-      if (ev.kind==='shell' && ev.exit!==undefined) s += ' · exit '+ev.exit;
-      line(s, ev.ok ? 'white' : 'red');
+      let dot='d-ok';
+      if (ev.ok===false) dot='d-bad';
+      else if (ev.ok===undefined) dot='d-run';
+      let s='<span class="dot '+dot+'"></span><span class="tname">'+k+'</span><span class="targs">('+(ev.s||'')+')</span>';
+      if (ev.kind==='shell' && ev.exit!==undefined && ev.exit!==0) s+=' <span class="red">· exit '+ev.exit+'</span>';
+      htmlLine(s);
       if (ev.out) outbox(ev.out);
       break;
     }
     case 'out':   outbox(ev.s); break;
     case 'usage': lastTok=ev.tok; break;
     case 'state': hudTok(ev.hud, ev.state); break;
-    case 'done':  spinStop(); closeDelta(); if (ev.s) line('✔ '+ev.s,'ok'); break;
-    case 'fail':  spinStop(); closeDelta(); line('✖ '+ev.s,'red'); break;
+    case 'done':  spinStop(); closeDelta(); if (ev.s) htmlLine('<span class="dot d-ok"></span>'+ev.s,'white'); break;
+    case 'fail':  spinStop(); closeDelta(); htmlLine('<span class="dot d-bad"></span>'+ev.s,'red'); break;
     case 'err':   spinStop(); closeDelta(); line('!! '+ev.s,'red'); break;
     case 'end':   spinStop(); closeDelta(); resetResp(); break;
   }
 }
 
-/* ---------- HUD ---------- */
+/* ---------- HUD (состояния) ---------- */
 function hudTok(hud, state){
   $('fTok').textContent=hud;
   const st=$('fState'); st.textContent='['+state+']';
@@ -343,26 +365,16 @@ async function hud(){
   }catch(e){}
 }
 
-/* ---------- мощность (⚡ AUTO → FAST → MAX) ---------- */
- $('fPow').onclick=()=>{
+/* ---------- мощность: клик по ⚡AUTO в шапке ---------- */
+ $('hdrPow').onclick=()=>{
   POWER = POWER==='AUTO'?'FAST':(POWER==='FAST'?'MAX':'AUTO');
-  $('fPow').textContent='⚡'+POWER; $('inp').focus();
+  $('hdrPow').textContent='⚡'+POWER; $('inp').focus();
 };
 
-/* ---------- quick-действия ---------- */
- $('bArch').onclick=async()=>{ try{ const d=await japi('/api/archive',{method:'POST',body:JSON.stringify({project:PROJECT})});
-  line('📦 '+d.archive.project+' · '+fmtK(d.archive.size)+'Б · sha'+d.archive.sha256.slice(0,10)+(d.sent_to_chat?' · файл в чате ⬆':''),'dim'); }catch(e){ deny('📦'); } };
- $('bCold').onclick=async()=>{ try{ const d=await japi('/api/cold',{method:'POST',body:JSON.stringify({project:PROJECT})});
-  line(d.ok? '❄ '+d.result.mailbox+' · частей '+d.result.parts : '❄ '+d.result.error, d.ok?'dim':'red'); }catch(e){ deny('❄'); } };
- $('bClean').onclick=async()=>{ try{ const d=await japi('/api/cleanup',{method:'POST',body:JSON.stringify({dry_run:true})});
-  planbox('🧹 убралось бы:\n'+(d.would_move.join('\n')||'(ничего)')+'\nактивный защищён: '+d.protected); }catch(e){ deny('🧹'); } };
- $('bStat').onclick=async()=>{ try{ const d=await japi('/healthz');
-  const v=Object.values(d.providers||{});
-  const p=v.length? 'ares:'+(v.some(x=>x.ok)?'✅':'⚠️') : 'нет ключей';
-  line('⚡ '+d.budget.hud+' ['+d.budget.state+'] · '+p,'dim'); }catch(e){ line('⚡ нет связи','red'); } };
-
 /* ---------- ввод ---------- */
+const inp=$('inp');
  $('prompt').addEventListener('submit', e=>{ e.preventDefault(); send(); });
+inp.addEventListener('input', ()=>{ $('blockCaret').classList.toggle('hidden', inp.value.length>0); });
 
 /* ---------- гейт ---------- */
  $('bReq').onclick=async()=>{
@@ -382,10 +394,8 @@ async function hud(){
     return;
   }
   $('app').classList.remove('hidden');
-  PROJECT=(w.project && w.project!=='default') ? w.project : PROJECT;  // 'default' сервера не перекрывает корень
-  line('· ты: id='+w.id+' · '+(w.owner?'владелец':'НЕ владелец')+' · доступ: '+(w.approved?'открыт':'есть'),'dim');
-  $('wDir').innerHTML='workspace/<b></b>'; $('wDir').querySelector('b').textContent=PROJECT;
-  $('fProj').textContent='workspace/'+PROJECT;
+  PROJECT=(w.project && w.project!=='default') ? w.project : PROJECT;
+  $('cwd').innerHTML='workspace/<b></b>'; $('cwd').querySelector('b').textContent=PROJECT;
   hud(); setInterval(hud, 5000);
   $('inp').focus();
 })();
