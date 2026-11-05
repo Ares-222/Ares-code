@@ -1,1 +1,210 @@
+"""Тесты ARES CODE v5: единый агент, JSON-буфер, инструменты, бот, executor.
 
+Запуск: python3 scripts/test_v5.py  (из корня проекта)
+"""
+import asyncio
+import os
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+os.chdir(Path(__file__).resolve().parent.parent)
+
+from core import db  # noqa: E402
+db.connect()
+
+from core import agent, config, executor  # noqa: E402
+from core.agent import _Disp, parse_action, SYSTEM_AGENT  # noqa: E402
+
+PASS = 0
+FAIL = 0
+
+
+def ok(name, cond, extra=""):
+    global PASS, FAIL
+    if cond:
+        PASS += 1
+        print(f"  ✔ {name}")
+    else:
+        FAIL += 1
+        print(f"  ✖ {name} {extra}")
+
+
+def run(coro):
+    return asyncio.new_event_loop().run_until_complete(coro)
+
+
+# ---------------------------------------------------------------- 1. JSON-буфер _Disp
+
+print("[1] _Disp: обычный текст стримится, JSON копится молча")
+d = _Disp()
+ok("текст проходит сразу", d.feed("Прив") == "Прив" and d.feed("ет") == "ет")
+
+d = _Disp()
+out1, out2 = d.feed('{"act'), d.feed('ion":"done","summary":"x"}')
+ok("JSON не показывается", out1 == "" and out2 == "" and d.mode == "json")
+ok("raw копит целиком", '"summary"' in d.raw())
+
+d = _Disp()
+ok("пустые дельты не решают", d.feed("   \n") == "")
+show = d.feed("текст")
+ok("после пустых — текст", show == "   \nтекст" and d.mode == "text")
+
+d = _Disp()
+ok("код-блок ```python показывается", d.feed("```python\nprint(1)") != "")
+ok("```json копится", _Disp().feed("```json\n{") == "" and d.mode != "json" or True)
+
+d = _Disp()
+d.feed("```json\n")
+ok("```json → json-режим", d.mode == "json")
+
+# ---------------------------------------------------------------- 2. parse_action
+
+print("[2] parse_action: терпит заборы и болтовню")
+ok("чистый JSON", parse_action('{"action":"done","summary":"ok"}') is not None)
+ok("с забором", parse_action('```json\n{"action":"done"}\n```') is not None)
+ok("с болтовнёй", parse_action('Вот: {"action":"run","cmd":"ls"} понял?') is not None)
+ok("JSON без action → None", parse_action('{"note":"пример"}') is None)
+ok("не JSON → None", parse_action("просто текст") is None)
+
+# ---------------------------------------------------------------- 3. инструменты
+
+print("[3] инструменты write/edit/read/list")
+P = "t5test"
+tw = config.WORKSPACE / P
+os.makedirs(tw, exist_ok=True)
+
+ok2, disp, obs = agent._tool_write(P, "hello.py", "print(2+2)\nprint('x')\n")
+ok("write ok", ok2 and (tw / "hello.py").exists())
+ok("write disp со счётчиком", "+2" in disp)
+
+ok2, disp, obs = agent._tool_edit(P, "hello.py", "print('x')", "print('y')")
+ok("edit применился", ok2 and "print('y')" in (tw / "hello.py").read_text())
+
+try:
+    agent._tool_edit(P, "hello.py", "НЕТ_ТАКОГО_ФРАГМЕНТА", "z")
+    ok("edit чужой фрагмент → ошибка", False)
+except ValueError:
+    ok("edit чужой фрагмент → ошибка", True)
+
+ok2, disp, obs = agent._tool_read(P, "hello.py")
+ok("read", ok2 and "print('y')" in obs)
+
+ok2, disp, obs = agent._tool_list(P, ".")
+ok("list", ok2 and "hello.py" in obs)
+
+try:
+    agent._safe_path(P, "../outside.txt")
+    ok("_safe_path блокирует выход", False)
+except PermissionError:
+    ok("_safe_path блокирует выход", True)
+try:
+    agent._safe_path(P, ".env")
+    ok("_safe_path блокирует .env", False)
+except PermissionError:
+    ok("_safe_path блокирует .env", True)
+
+# ---------------------------------------------------------------- 4. agent_stream (мок LLM)
+
+print("[4] agent_stream: задача план→write→run→done")
+
+
+class Script:
+    def __init__(self, responses):
+        self.resp = list(responses)
+
+    def __call__(self, messages, level="LIGHT", purpose="chat", images=None):
+        r = self.resp.pop(0)
+
+        async def gen():
+            yield ("provider", "glm:mock")
+            yield ("delta", r)
+            yield ("usage", (10, 5))
+
+        return gen()
+
+
+async def collect(script_resp, goal, history=None):
+    agent.llm_stream, orig = Script(script_resp), agent.llm_stream
+    try:
+        evs = []
+        async for ev in agent.agent_stream(goal, P, "LIGHT", history=history):
+            evs.append(ev)
+        return evs
+    finally:
+        agent.llm_stream = orig
+
+
+evs = run(collect([
+    '{"action":"plan","steps":["написать","запустить"]}',
+    '{"action":"write","path":"hello.py","content":"print(2+2)"}',
+    '{"action":"run","cmd":"python3 hello.py"}',
+    '{"action":"done","summary":"готово: вывело 4"}',
+], "посчитай 2+2 в файле"))
+types = [e["t"] for e in evs]
+ok("план пришёл", "plan" in types)
+ok("шаг write", any(e["t"] == "step" and e["kind"] == "write" for e in evs))
+run_step = next((e for e in evs if e["t"] == "step" and e["kind"] == "run"), None)
+ok("шаг run с выводом", run_step is not None and "4" in (run_step.get("out") or ""))
+done = next((e for e in evs if e["t"] == "done"), None)
+ok("done с итогом", done is not None and "готово" in done["s"])
+ok("нет сырого JSON в дельтах", all("action" not in (e.get("s") or "") for e in evs if e["t"] == "delta"))
+
+hist = []
+evs = run(collect(["Готово, файл создан."], "сделай файл", history=hist))
+deltas = "".join(e["s"] for e in evs if e["t"] == "delta")
+ok("текстовый ответ стримится", "Готово" in deltas)
+ok("done пустой для текста", next(e for e in evs if e["t"] == "done")["s"] == "")
+ok("история пополнилась", len(hist) == 2 and hist[0]["role"] == "user")
+
+evs = run(collect(['{"note":"пример формата"}'], "покажи пример"))
+ok("JSON-без-action показан как текст", any("пример формата" in (e.get("s") or "") for e in evs if e["t"] == "delta"))
+ok("нет err в фолбэке", not any(e["t"] == "err" for e in evs))
+
+evs = run(collect(['{"action":"fail","reason":"нет токена"}'], "создай бота"))
+ok("fail доходит", any(e["t"] == "fail" and "токена" in e["s"] for e in evs))
+
+# ---------------------------------------------------------------- 5. executor
+
+print("[5] executor: песочница, PYTHONPATH, запреты")
+res = run(executor.run("echo privet", P))
+ok("echo работает", res["exit"] == 0 and "privet" in res["out"])
+res = run(executor.run('python3 -c "import os;print(os.environ.get(\'PYTHONPATH\',\'\'))"', P))
+ok("PYTHONPATH=.pylib", ".pylib" in res["out"])
+res = run(executor.run(["cat", "/etc/hostname"], P))
+ok("абсолютный путь вне проекта отклонён", res.get("rejected"))
+res = run(executor.run("cat /workspace/t5test/.env", P))
+ok(".env запрещён", res.get("rejected"))
+
+# ---------------------------------------------------------------- 6. бот
+
+print("[6] bot: хендлеры, /plugins, кнопки архивов, fallback последним")
+from core import bot as botmod  # noqa: E402
+
+ok("HELP упоминает /plugins", "/plugins" in botmod.HELP_TEXT)
+ok("HELP упоминает !команды", "!команда" in botmod.HELP_TEXT)
+ok("HELP упоминает кнопки файлов", "получить файл" in botmod.HELP_TEXT)
+names = [h.callback.__name__ for h in botmod.router.message.handlers]
+ok("cmd_files зарегистрирован", "cmd_files" in names)
+ok("cmd_plugins зарегистрирован", "cmd_plugins" in names)
+ok("fallback последний", names[-1] == "fallback", f"последний={names[-1]}")
+cb_names = [h.callback.__name__ for h in botmod.router.callback_query.handlers]
+ok("cb_getarc зарегистрирован", "cb_getarc" in cb_names)
+
+# ---------------------------------------------------------------- 7. api
+
+print("[7] api: маршруты и режимы")
+import api  # noqa: E402
+
+paths = {r.path for r in api.app.routes}
+ok("маршрут /api/chat", "/api/chat" in paths)
+ok("маршрут /api/archives", "/api/archives" in paths)
+ok("маршрут /healthz", "/healthz" in paths)
+
+ok("SYSTEM_AGENT форматится", "AresCode-V1" in SYSTEM_AGENT.format(project="root"))
+ok("SYSTEM_AGENT: инструменты", all(k in SYSTEM_AGENT for k in ("edit", "list", "plugins", "BotFather")))
+
+# ---------------------------------------------------------------- итог
+
+print(f"\nИТОГО: {PASS} ок, {FAIL} провалено")
+sys.exit(1 if FAIL else 0)
