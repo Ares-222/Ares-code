@@ -88,6 +88,66 @@ def safe_project(name: str | None) -> str:
     return n or "default"
 
 
+# ---------------------------------------------------------------- файлы -> чат Telegram
+
+SEND_FILES_LIMIT = 10                     # максимум файлов за одну задачу
+SEND_FILE_MAX_BYTES = 45 * 1024 * 1024    # лимит Bot API на документ — 50МБ, берём с запасом
+
+
+def _snapshot_files(project: str) -> dict:
+    """rel_path -> mtime всех файлов проекта (скрытые папки/файлы пропускаем)."""
+    base = config.WORKSPACE / project
+    snap = {}
+    if not base.exists():
+        return snap
+    for p in base.rglob("*"):
+        rel = str(p.relative_to(base))
+        if rel.startswith(".") or "/." in rel or not p.is_file():
+            continue
+        try:
+            snap[rel] = p.stat().st_mtime
+        except OSError:
+            pass
+    return snap
+
+
+def _changed_files(project: str, before: dict) -> list:
+    """Файлы, созданные/изменённые с момента снимка (новые сверху)."""
+    now = _snapshot_files(project)
+    return sorted((rel for rel, mt in now.items() if before.get(rel) != mt),
+                  key=lambda rel: now[rel], reverse=True)
+
+
+async def send_files_to_chat(uid: int, project: str, rels: list) -> int:
+    """Созданные агентом файлы уходят документами прямо в чат Telegram."""
+    bot = botmod._bot
+    if bot is None or not rels:
+        return 0
+    from aiogram.types import FSInputFile
+    base = config.WORKSPACE / project
+    sent = 0
+    for rel in rels[:SEND_FILES_LIMIT]:
+        try:
+            p = base / rel
+            size = p.stat().st_size
+            if not p.is_file() or size == 0 or size > SEND_FILE_MAX_BYTES:
+                continue
+            await bot.send_document(
+                uid, FSInputFile(str(p), filename=rel.split("/")[-1]),
+                caption=f"📦 {rel} · workspace/{project}")
+            sent += 1
+        except Exception as e:
+            log.warning("send_document %s: %s", rel, e)
+    if len(rels) > SEND_FILES_LIMIT:
+        try:
+            await bot.send_message(
+                uid, f"📦 …и ещё {len(rels) - SEND_FILES_LIMIT} файлов — "
+                     f"забери всё разом: /archive {project}")
+        except Exception:
+            pass
+    return sent
+
+
 # ---------------------------------------------------------------- страницы и статус
 
 @app.get("/")
@@ -159,6 +219,7 @@ async def api_chat(request: Request, user: dict = Depends(auth)):
     db.kv_set("active_project", project)
     (config.WORKSPACE / project).mkdir(parents=True, exist_ok=True)
     level = budget.complexity(text, power)
+    before = _snapshot_files(project) if mode in ("CODE", "SHELL") else {}
 
     async def gen():
         if not user["approved"]:
@@ -200,6 +261,17 @@ async def api_chat(request: Request, user: dict = Depends(auth)):
                     msgs[:] = [msgs[0]] + msgs[-39:]
         except Exception as e:
             yield sse({"t": "err", "s": f"{type(e).__name__}: {e}"})
+        if mode in ("CODE", "SHELL"):
+            # новые/изменённые файлы задачи — документами в чат Telegram
+            try:
+                changed = _changed_files(project, before)
+                if changed:
+                    n = await send_files_to_chat(user["id"], project, changed)
+                    if n:
+                        yield sse({"t": "note",
+                                   "s": f"📦 {n} файл(ов) отправлены в чат Telegram"})
+            except Exception as e:
+                log.warning("send files to chat: %s", e)
         yield sse({"t": "state", "hud": budget.hud(), "state": budget.state()})
         yield sse({"t": "end"})
 
