@@ -1,4 +1,4 @@
-"""ARES CODE — FastAPI: Mini App, HUD, SSE-чат (CHAT/CODE/SHELL), архивы, холодное хранение.
+"""ARES CODE — FastAPI: Mini App, HUD, SSE-агент (единый AGENT + прямая SHELL), архивы, холод.
 
 Один процесс: API + бот (polling) + фоновые задачи (уборщик). Авторизация Mini App —
 стандартная проверка подписи Telegram initData (HMAC с BOT_TOKEN).
@@ -17,11 +17,11 @@ from fastapi.responses import FileResponse, StreamingResponse
 
 from core import agent, cleaner, coldstore, config, db, executor, resources, storage
 from core import bot as botmod
-from core.budget import budget, CHAT_SYSTEM
+from core.budget import budget
 
 log = logging.getLogger("ares.api")
 
-_HIST: dict = {}  # uid -> messages (CHAT-режим, в памяти процесса)
+_HIST: dict = {}  # uid -> история диалога с агентом (в памяти процесса)
 
 
 @asynccontextmanager
@@ -211,15 +211,17 @@ async def api_chat(request: Request, user: dict = Depends(auth)):
     images = body.get("images") or []
     if not text and not images:
         raise HTTPException(400, "пустой запрос")
-    mode = (body.get("mode") or "CHAT").upper()
-    if mode not in ("CHAT", "CODE", "SHELL"):
-        mode = "CHAT"
+    mode = (body.get("mode") or "AGENT").upper()
+    if mode in ("CHAT", "CODE"):  # legacy-имена → единый агент
+        mode = "AGENT"
+    if mode not in ("AGENT", "SHELL"):
+        mode = "AGENT"
     power = (body.get("power") or "AUTO").upper()
     project = safe_project(body.get("project") or db.kv_get("active_project") or "default")
     db.kv_set("active_project", project)
     (config.WORKSPACE / project).mkdir(parents=True, exist_ok=True)
     level = budget.complexity(text, power)
-    before = _snapshot_files(project) if mode in ("CODE", "SHELL") else {}
+    before = _snapshot_files(project) if mode in ("AGENT", "SHELL") else {}
 
     async def gen():
         if not user["approved"]:
@@ -240,28 +242,16 @@ async def api_chat(request: Request, user: dict = Depends(auth)):
                     yield sse({"t": "out", "s": res["err"]})
                 yield sse({"t": "step", "kind": "shell", "ok": res["exit"] == 0,
                            "s": res["cmd"], "exit": res["exit"]})
-            elif mode == "CODE":
-                async for ev in agent.code_stream(text, project, level):
-                    yield sse(ev)
-            else:  # CHAT
-                msgs = _HIST.setdefault(user["id"], [])
-                if not msgs:
-                    msgs.append({"role": "system", "content": CHAT_SYSTEM})
-                msgs.append({"role": "user", "content": text})
-                if budget.compaction_needed(msgs):
-                    msgs[:] = budget.compact(msgs)
+            else:  # AGENT — единый агент: сам решает, ответить текстом или работать инструментами
+                hist = _HIST.setdefault(user["id"], [])
+                if budget.msgs_tokens(hist) > config.CTX_COMPACT_AT // 2:
+                    hist[:] = hist[-8:]
                     yield sse({"t": "note", "s": "контекст сжат (компакция)"})
-                reply = ""
-                async for ev in agent.chat_stream(msgs, mode="CHAT", level=level, images=images):
-                    if ev["t"] == "delta":
-                        reply += ev["s"]
+                async for ev in agent.agent_stream(text, project, level, history=hist):
                     yield sse(ev)
-                msgs.append({"role": "assistant", "content": reply})
-                if len(msgs) > 40:
-                    msgs[:] = [msgs[0]] + msgs[-39:]
         except Exception as e:
             yield sse({"t": "err", "s": f"{type(e).__name__}: {e}"})
-        if mode in ("CODE", "SHELL"):
+        if mode in ("AGENT", "SHELL"):
             # новые/изменённые файлы задачи — документами в чат Telegram (отключается /files off)
             try:
                 changed = _changed_files(project, before)
@@ -293,7 +283,8 @@ async def api_archive(request: Request, user: dict = Depends(auth)):
     body = await request.json()
     try:
         row = storage.make_archive(safe_project(body.get("project")))
-        return {"ok": True, "archive": row}
+        sent = await botmod.send_archive_to_chat(user["id"], row)
+        return {"ok": True, "archive": row, "sent_to_chat": sent}
     except Exception as e:
         raise HTTPException(400, str(e))
 
