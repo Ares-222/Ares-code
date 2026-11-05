@@ -262,10 +262,10 @@ async def api_chat(request: Request, user: dict = Depends(auth)):
         except Exception as e:
             yield sse({"t": "err", "s": f"{type(e).__name__}: {e}"})
         if mode in ("CODE", "SHELL"):
-            # новые/изменённые файлы задачи — документами в чат Telegram
+            # новые/изменённые файлы задачи — документами в чат Telegram (отключается /files off)
             try:
                 changed = _changed_files(project, before)
-                if changed:
+                if changed and db.kv_get("send_files", "1") != "0":
                     n = await send_files_to_chat(user["id"], project, changed)
                     if n:
                         yield sse({"t": "note",
