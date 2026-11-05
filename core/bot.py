@@ -81,6 +81,7 @@ HELP_TEXT = ("ARES CODE · справка\n\n"
              "/restore <id> — восстановить архив\n"
              "/cleanup — уборка (посмотреть); /cleanup yes — выполнить\n"
              "/wipe [проект] — очистить содержимое проекта, даже активного\n"
+             "/files on|off — автосохранение файлов задач в чат\n"
              "/id — мой Telegram ID\n"
              "/help — эта справка\n\n"
              "Команды SHELL (режим SHELL в терминале):\n"
@@ -331,6 +332,25 @@ async def cmd_wipe(m: Message):
                    reply_markup=kb_open())
 
 
+@router.message(Command("files"))
+async def cmd_files(m: Message):
+    """Вкл/выкл автосохранение файлов задач в чат."""
+    if not db.is_owner(m.from_user.id):
+        return
+    parts = (m.text or "").split()
+    arg = parts[1].lower() if len(parts) > 1 else ""
+    cur = db.kv_get("send_files", "1") != "0"
+    if arg in ("off", "выкл", "0"):
+        db.kv_set("send_files", "0")
+        await m.answer("📦 Файлы задач в чат: ВЫКЛ\nВернуть: /files on")
+    elif arg in ("on", "вкл", "1"):
+        db.kv_set("send_files", "1")
+        await m.answer("📦 Файлы задач в чат: ВКЛ")
+    else:
+        await m.answer(f"📦 Файлы задач в чат: {'ВКЛ' if cur else 'ВЫКЛ'}\n"
+                       f"Переключить: /files on | /files off")
+
+
 @router.message(Command("coldstatus"))
 async def cmd_coldstatus(m: Message):
     if not db.is_owner(m.from_user.id):
@@ -404,6 +424,8 @@ async def start_polling():
             BotCommand(command="health", description="пинг провайдеров"),
             BotCommand(command="archives", description="список архивов"),
             BotCommand(command="cleanup", description="уборка workspace"),
+            BotCommand(command="wipe", description="очистить проект"),
+            BotCommand(command="files", description="файлы задач в чат вкл/выкл"),
             BotCommand(command="id", description="мой Telegram ID"),
         ])
     except Exception as e:
