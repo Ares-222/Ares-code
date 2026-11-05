@@ -5,6 +5,7 @@
   * остальные видят «⛔ ДОСТУП ЗАКРЫТ» + кнопку 🔒 «Запросить доступ»;
   * владельцу приходит заявка с кнопками ✅ / ⛔; одобренные вносятся в SQLite.
 Команды владельца: /status /limits /id /archives /archive /cold /restore /cleanup /allow /deny /health
+Общие: /help — справка по командам бота и SHELL.
 """
 import logging
 import time
@@ -65,6 +66,37 @@ async def cmd_start(m: Message):
 async def cmd_id(m: Message):
     await m.answer(f"Твой Telegram ID: {m.from_user.id}\n"
                    f"Впиши его в OWNER_TELEGRAM_IDS (.env) и перезапусти ARES.")
+
+
+HELP_TEXT = ("ARES CODE · справка\n\n"
+             "Команды бота:\n"
+             "/start — открыть терминал\n"
+             "/status — статус: CPU/RAM/диск, провайдеры, бюджет\n"
+             "/limits — суточные лимиты\n"
+             "/health — пинг провайдеров\n"
+             "/archives — список архивов\n"
+             "/archive <проект> — заархивировать проект\n"
+             "/cold <проект> — архив в холодное хранилище\n"
+             "/coldstatus — статус почтовых ящиков\n"
+             "/restore <id> — восстановить архив\n"
+             "/cleanup — уборка (посмотреть); /cleanup yes — выполнить\n"
+             "/id — мой Telegram ID\n"
+             "/help — эта справка\n\n"
+             "Команды SHELL (режим SHELL в терминале):\n"
+             "python3 python pip node npm git curl ffmpeg zip unzip sqlite3\n"
+             "ls cat head tail grep find echo printf mkdir touch cp mv rm pwd\n"
+             "wc sed awk tar jq diff sort uniq stat du df chmod\n\n"
+             "Ограничения: только внутри workspace/<проект>; .env и системные пути закрыты.\n"
+             "Файлы, созданные агентом, дублируются документами прямо в этот чат.")
+
+
+@router.message(Command("help"))
+async def cmd_help(m: Message):
+    db.upsert_user(m.from_user.id, m.from_user.full_name)
+    if db.is_owner(m.from_user.id) or db.is_approved(m.from_user.id):
+        await m.answer(HELP_TEXT, reply_markup=kb_open())
+    else:
+        await m.answer(GATE_TEXT, reply_markup=kb_request())
 
 
 @router.callback_query(F.data == "req_access")
@@ -344,5 +376,20 @@ async def start_polling():
                 text="◆ Open Ares Code", web_app=WebAppInfo(url=config.BASE_URL)))
         except Exception as e:
             log.warning("menu button: %s", e)
+    # список команд в меню бота (кнопка ≡ слева от поля ввода)
+    try:
+        from aiogram.types import BotCommand
+        await _bot.set_my_commands([
+            BotCommand(command="start", description="открыть терминал"),
+            BotCommand(command="help", description="справка: команды и лимиты"),
+            BotCommand(command="status", description="статус системы"),
+            BotCommand(command="limits", description="суточные лимиты"),
+            BotCommand(command="health", description="пинг провайдеров"),
+            BotCommand(command="archives", description="список архивов"),
+            BotCommand(command="cleanup", description="уборка workspace"),
+            BotCommand(command="id", description="мой Telegram ID"),
+        ])
+    except Exception as e:
+        log.warning("set_my_commands: %s", e)
     log.info("бот запущен (polling)")
     await dp.start_polling(_bot, handle_signals=False)
