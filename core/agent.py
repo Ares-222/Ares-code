@@ -255,7 +255,9 @@ async def llm_stream(messages, level: str = "LIGHT", purpose: str = "chat", imag
                     return
                 errs.append(f"{name}: {type(e).__name__}: {str(e)[:160]}")
         if attempt == 1:
-            await asyncio.sleep(1.5)  # разовая перегрузка/пустой поток — пробуем ещё раз
+            # 429/перегрузка — ждём дольше перед повтором; прочее — короткая пауза
+            overloaded = any("429" in e or "overload" in e.lower() for e in errs)
+            await asyncio.sleep(8 if overloaded else 1.5)  # разовая перегрузка/пустой поток — пробуем ещё раз
     yield ("fail", "Все провайдеры недоступны → " + " | ".join(errs[-3:]))
 
 
