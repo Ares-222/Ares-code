@@ -263,7 +263,7 @@ async def llm_stream(messages, level: str = "LIGHT", purpose: str = "chat", imag
 
 async def chat_stream(messages, mode: str = "CHAT", level: str = "LIGHT", images=None):
     """Обёртка: события dict + учёт токенов в бюджет."""
-    prov, model_used = "?", ""
+    prov, model_used, fail_msg = "?", "", ""
     text_parts, usage, t0 = [], None, time.time()
     call_msgs = list(messages)
     if budget.state() == "ECONOMY":
@@ -280,6 +280,12 @@ async def chat_stream(messages, mode: str = "CHAT", level: str = "LIGHT", images
                 yield {"t": "reason", "s": payload}
             elif kind == "usage":
                 usage = payload
+            elif kind == "fail":
+                fail_msg = payload
+                if not text_parts:
+                    yield {"t": "err", "s": payload}  # настоящая причина вместо «пустой ответ»
+                else:
+                    yield {"t": "note", "s": payload}  # обрыв после части текста
     except Exception as e:
         budget.record(prov, model_used, 0, 0, mode, int((time.time() - t0) * 1000), ok=False)
         yield {"t": "err", "s": f"{type(e).__name__}: {e}"}
@@ -294,8 +300,8 @@ async def chat_stream(messages, mode: str = "CHAT", level: str = "LIGHT", images
     ok = bool(text.strip())
     budget.record(prov, model_used, p, c, mode, int((time.time() - t0) * 1000), ok=ok)
     yield {"t": "usage", "tok": int(p or 0) + int(c or 0)}
-    if not ok:
-        yield {"t": "err", "s": "провайдер вернул пустой ответ"}
+    if not ok and not fail_msg:
+        yield {"t": "err", "s": "провайдер вернул пустой ответ (без причины)"}
 
 
 # ---------------------------------------------------------------- CODE-режим
