@@ -14,6 +14,7 @@ Failover-цепочка: GLM-4.7-Flash -> Gemini Flash -> OpenRouter :free-пу�
 """
 import asyncio
 import json
+import re
 import time
 
 import httpx
@@ -316,7 +317,7 @@ SYSTEM_AGENT = """Ты — AresCode-V1, автономный ИИ-агент в�
 
 САМ ВЫБИРАЙ РЕЖИМ ОТВЕТА:
 * Вопрос, разговор, объяснение → ответь ОБЫЧНЫМ ТЕКСТОМ. Никакого JSON.
-* Просят сделать работу (код, файлы, команды, установка/удаление софта, тесты, боты) → работай РОВНО ОДНИМ JSON-объектом на каждый ход, ответ начинается с первого символа {{, без ```-заборов и текста вокруг. Доступные действия:
+* Просят сделать работу (код, файлы, команды, установка/удаление софта, тесты, боты) → работай РОВНО ОДНИМ JSON-объектом на каждый ход: первый символ ответа {{, последний — }}, никаких ```-заборов и слов до/после — это машинный протокол. Доступные действия:
 {{"action":"plan","steps":["шаг 1","шаг 2"]}}      — краткий план перед нетривиальной работой
 {{"action":"run","cmd":"python3 main.py"}}         — команда (python3 pip node npm git curl ffmpeg zip sqlite3 ls cat grep sed find и др.)
 {{"action":"write","path":"rel/path.py","content":"..."}} — создать/перезаписать файл
@@ -428,10 +429,16 @@ def _tool_list(project: str, rel: str):
     return True, disp, obs
 
 
+_FENCE_RE = re.compile(r"^```[A-Za-z0-9_+\-]*[ \t]*\r?\n?")
+
+
 class _Disp:
     """Разделитель потока дельт: обычный текст стримится сразу, JSON-действие копится молча.
 
-    Так сырой JSON-протокол никогда не попадает в терминал пользователю (баг «даёт JSON»)."""
+    Так сырой JSON-протокол никогда не попадает в терминал пользователю (баг «даёт JSON»).
+    Терпит ЛЮБЫЕ ```-заборы: ```json, ```JSON, ``` без тега (любимый формат Gemini и
+    OpenRouter-пулов) — если внутри забора действие, он копится молча и выполняется,
+    а не уезжает на экран как текст."""
 
     def __init__(self):
         self.buf = ""
@@ -443,21 +450,30 @@ class _Disp:
             return s
         self.buf += s
         if self.mode is None:
-            stripped = self.buf.lstrip()
-            if not stripped:
-                return ""
-            if stripped[0] == "{":
-                self.mode = "json"
-            elif stripped.startswith("```json"):
-                self.mode = "json"
-            elif stripped.startswith("```"):
-                self.mode = "text"  # обычный код-блок в ответе — показываем
-            else:
-                self.mode = "text"
+            self._decide()
         if self.mode == "text":
             show, self.buf = self.buf, ""
             return show
         return ""  # json — копим дальше
+
+    def _decide(self):
+        """Режим по началу потока: { либо забор с { внутри → json, иначе — обычный текст."""
+        stripped = self.buf.lstrip()
+        if not stripped:
+            return
+        if stripped[0] == "{":
+            self.mode = "json"
+            return
+        if stripped in ("`", "``"):
+            return  # похоже на начало ```-забора, пришедшего куском — ждём продолжение
+        m = _FENCE_RE.match(stripped)
+        if m:
+            inside = stripped[m.end():].lstrip()
+            if not inside:
+                return  # забор уже пришёл, а что внутри — ещё нет; ждём следующие дельты
+            self.mode = "json" if inside[0] == "{" else "text"
+            return
+        self.mode = "text"  # обычный ответ или код-блок без действия — показываем
 
     def raw(self) -> str:
         """Полный накопленный поток (для разбора действия)."""
