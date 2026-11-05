@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- ═══ ARES CODE v6 · webapp/index.html · единый терминал-агент ═══ -->
+<!-- ═══ ARES CODE v6.1 · webapp/index.html · терминал в стиле Claude Code ═══ -->
 <html lang="ru">
 <head>
 <meta charset="utf-8">
@@ -20,45 +20,43 @@
 html,body{height:100%}
 body{background:var(--bg);color:var(--white);font-family:'JetBrains Mono',ui-monospace,Menlo,monospace;
      font-size:12.5px;line-height:1.55;overflow:hidden}
-#app{display:flex;flex-direction:column;height:100vh;padding:8px 8px 10px;gap:7px}
+#app{display:flex;flex-direction:column;height:100vh;padding:8px 8px 8px;gap:6px}
+.hidden{display:none!important}
+.scan{position:fixed;inset:0;pointer-events:none;z-index:40;
+      background:repeating-linear-gradient(0deg,rgba(255,255,255,.012) 0 1px,transparent 1px 3px)}
 
-/* ---------- HUD (Claude Code style header) ---------- */
-#hud{display:flex;align-items:center;gap:8px;background:var(--panel);border:1px solid var(--border);
-     border-top:2px solid var(--red);border-radius:3px;padding:6px 9px;font-size:10.5px;color:var(--gray);
-     overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+/* ---------- верхняя строка: бренд + система ---------- */
+#hud{display:flex;align-items:center;gap:8px;font-size:10.5px;color:var(--dim);
+     padding:2px 4px;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
 #hud::-webkit-scrollbar{display:none}
-#hud .brand{color:var(--white);font-weight:800;letter-spacing:1px}
+#hud .brand{color:var(--white);font-weight:800;letter-spacing:1px;flex:0 0 auto}
+#hud .brand .sp{color:var(--red)}
 #hud .brand b{color:var(--red);font-weight:800}
 #hud .sep{color:var(--border)}
-#hud b{color:var(--red);font-weight:600}
-#hudPow{color:var(--gray);cursor:pointer;user-select:none;flex:0 0 auto}
-#hudPow:active{color:var(--red)}
 
-/* ---------- welcome block ---------- */
-#welcome{background:var(--panel);border:1px solid var(--border);border-radius:3px;padding:16px 14px 12px;text-align:center}
-.gem{width:26px;height:26px;background:var(--red);transform:rotate(45deg);margin:2px auto 14px;
-     box-shadow:0 0 18px 4px rgba(220,15,12,.55),0 0 60px 12px rgba(220,15,12,.18);position:relative}
-.gem::after{content:"";position:absolute;inset:6px;background:var(--red-deep)}
-.wTitle{font-size:21px;font-weight:800;letter-spacing:4px}
-.wTitle b{color:var(--red);font-weight:800}
-.wSub{color:var(--gray);font-size:10px;letter-spacing:3px;margin-top:3px}
-.wMeta{color:var(--dim);font-size:10.5px;margin-top:9px}
-.wMeta b{color:var(--gray);font-weight:600}
-#wDir,#wDir b{color:var(--red)}
-.divider{height:3px;margin:11px 0 8px;border-radius:1px;
-         background:linear-gradient(90deg,var(--red) 0 76%,#2A2A30 76% 100%)}
-.wTips{color:var(--dim);font-size:9.5px;letter-spacing:1px;line-height:1.8}
+/* ---------- welcome в стиле Claude Code (уезжает после первой задачи) ---------- */
+#welcome{background:var(--panel);border:1px solid var(--border);border-radius:3px;padding:14px 15px 13px}
+.spark{font-size:24px;color:var(--red);line-height:1;margin-bottom:9px;
+       text-shadow:0 0 14px rgba(220,15,12,.55),0 0 40px rgba(220,15,12,.20)}
+.wTitle{font-size:15px;font-weight:800;letter-spacing:.5px}
+.wTitle b{color:var(--red)}
+.wMeta{color:var(--gray);font-size:10.5px;margin-top:6px}
+#wDir{color:var(--gray)} #wDir b{color:var(--red)}
+.wTips{color:var(--dim);font-size:10px;line-height:1.8;margin-top:10px;
+       border-top:1px solid var(--border);padding-top:9px}
 .wTips b{color:var(--gray);font-weight:600}
 
-/* ---------- terminal ---------- */
+/* ---------- терминал ---------- */
 #term{flex:1;overflow-y:auto;background:var(--panel);border:1px solid var(--border);border-radius:3px;
       padding:10px 11px;scrollbar-width:thin;scrollbar-color:#2A2A30 transparent}
 .ln{white-space:pre-wrap;word-break:break-word}
 .dim{color:var(--dim)} .gray{color:var(--gray)} .red{color:var(--red)} .ok{color:var(--ok)}
 .white{color:var(--white)}
-.planbox{border-left:2px solid var(--red);background:var(--panel2);padding:6px 9px;margin:5px 0;border-radius:0 3px 3px 0;color:#FFD9CF}
-.outbox{border-left:2px solid #2A2A30;background:var(--panel2);padding:6px 9px;margin:5px 0;border-radius:0 3px 3px 0;color:var(--gray);font-size:11.5px}
-.chip{display:inline-block;border:1px solid #3A3A40;color:var(--dim);border-radius:2px;padding:0 7px;
+.planbox{border:1px solid var(--border);background:var(--panel2);border-radius:3px;
+         padding:7px 10px;margin:3px 0 5px;color:#FFD9CF;font-size:11.5px;white-space:pre-wrap;word-break:break-word}
+.outbox{color:var(--gray);font-size:11.5px;margin:1px 0 4px;padding-left:5px;
+        white-space:pre-wrap;word-break:break-word}
+.chip{display:inline-block;border:1px dotted #3A3A40;color:var(--dim);border-radius:2px;padding:0 7px;
       font-size:9.5px;cursor:pointer;margin:3px 0;user-select:none}
 .chip:active{color:var(--red)}
 .reason{border-left:2px solid #333;color:#4E4E55;font-size:11px;padding:4px 9px;margin:2px 0;white-space:pre-wrap}
@@ -66,40 +64,48 @@ body{background:var(--bg);color:var(--white);font-family:'JetBrains Mono',ui-mon
         animation:blink 1s steps(1) infinite}
 @keyframes blink{50%{opacity:0}}
 
-/* ---------- prompt ---------- */
+/* ---------- строка ввода: «>» как в Claude Code ---------- */
 #prompt{display:flex;gap:8px;align-items:center;background:var(--panel);border:1px solid var(--border);
         border-radius:3px;padding:9px 11px}
 #prompt:focus-within{border-color:var(--red)}
-#prompt .ps1{color:var(--red);font-weight:800;white-space:nowrap;font-size:12px}
+#prompt .ps1{color:var(--red);font-weight:800;white-space:nowrap;font-size:13px}
 #inp{flex:1;background:transparent;border:none;outline:none;color:var(--white);font-family:inherit;
      font-size:12.5px;caret-color:var(--red)}
 #inp::placeholder{color:#45454B}
-#bSend{background:var(--red);color:#fff;border:none;border-radius:2px;font-family:inherit;font-weight:800;
-       padding:6px 12px;cursor:pointer;font-size:12px}
-#bSend:active{background:var(--red-deep)}
+#bSend{background:none;color:var(--dim);border:none;font-family:inherit;font-weight:800;font-size:14px;
+       cursor:pointer;padding:2px 4px}
+#bSend:active{color:var(--red)}
+
+/* ---------- быстрые команды ---------- */
 #quick{display:flex;gap:6px}
 #quick button{flex:1;background:none;border:1px solid var(--border);color:var(--dim);border-radius:3px;
-  padding:7px 0;font-family:inherit;font-size:10px;letter-spacing:1px;cursor:pointer}
+  padding:7px 0;font-family:inherit;font-size:10px;letter-spacing:.5px;cursor:pointer}
 #quick button:active{color:var(--red);border-color:var(--red)}
 
-/* ---------- gate · ДОСТУП ---------- */
+/* ---------- нижняя статусная строка (как status line в Claude Code) ---------- */
+#foot{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--dim);
+      padding:3px 4px;overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+#foot::-webkit-scrollbar{display:none}
+#foot .sep{color:var(--border)}
+#foot #fModel{color:var(--gray)}
+#foot #fPow{cursor:pointer;user-select:none;color:var(--gray)}
+#foot #fPow:active{color:var(--red)}
+.st-ok{color:var(--gray)} .st-warn{color:var(--ok)} .st-bad{color:var(--red)}
+
+/* ---------- гейт · ДОСТУП ---------- */
 #gate{position:fixed;inset:0;background:#050506;display:flex;align-items:center;justify-content:center;padding:22px;z-index:50}
 #gate .card{width:100%;max-width:420px;background:#141416;border:1px solid #26262A;border-top:3px solid var(--red);
             border-radius:3px;padding:20px 18px 22px}
 #gate .gt{color:var(--red);font-size:12px;font-weight:800;letter-spacing:3px;margin-bottom:14px}
 #gate .gl{color:var(--dim);font-size:10px;letter-spacing:2px;margin-bottom:8px}
 #gate .gb{color:var(--white);font-size:12.5px;margin-bottom:16px}
-#gate .gi{width:100%;background:#0A0A0B;border:1px solid var(--red);border-radius:2px;color:var(--white);
-          font-family:inherit;font-size:13px;padding:12px 12px;outline:none;margin-bottom:14px}
-#gate .gi::placeholder{color:#45454B}
 #gate #bReq{display:inline-flex;align-items:center;gap:9px;background:var(--red);color:#fff;border:none;
         border-radius:2px;font-family:inherit;font-weight:800;font-size:13px;letter-spacing:2px;padding:13px 22px;cursor:pointer}
 #gate #bReq:active{background:var(--red-deep)}
 #gate .gmsg{color:var(--gray);font-size:11px;margin-top:12px}
-#gate .gem{margin:0 auto 16px}
-.hidden{display:none!important}
-.scan{position:fixed;inset:0;pointer-events:none;z-index:40;
-      background:repeating-linear-gradient(0deg,rgba(255,255,255,.012) 0 1px,transparent 1px 3px)}
+#gate .gem{width:26px;height:26px;background:var(--red);transform:rotate(45deg);margin:0 auto 16px;
+     box-shadow:0 0 18px 4px rgba(220,15,12,.55),0 0 60px 12px rgba(220,15,12,.18);position:relative}
+#gate .gem::after{content:"";position:absolute;inset:6px;background:var(--red-deep)}
 </style>
 </head>
 <body>
@@ -119,40 +125,44 @@ body{background:var(--bg);color:var(--white);font-family:'JetBrains Mono',ui-mon
 
 <div id="app" class="hidden">
   <div id="hud">
-    <span class="brand">ARES<b>◆</b>CODE</span><span class="sep">│</span>
-    <span id="hudSys">CPU —% · RAM —% · DISK —%</span><span class="sep">│</span>
-    <span id="hudTok">TOK — | REQ —</span><span class="sep">│</span>
-    <span id="hudSt" class="dim">—</span><span class="sep">│</span>
-    <span id="hudPow">⚡AUTO</span>
+    <span class="brand"><span class="sp">✻</span> ARES<b>◆</b>CODE</span><span class="sep">│</span>
+    <span id="hudSys">CPU —% · RAM —% · DISK —%</span>
   </div>
 
   <div id="welcome">
-    <div class="gem"></div>
-    <div class="wTitle">ARES <b>CODE</b></div>
-    <div class="wSub">AGENT · TERMINAL</div>
-    <div class="wMeta" id="wModel">ARES CODE V1</div>
-    <div class="wMeta" id="wDir">workspace/<b>root</b></div>
-    <div class="divider"></div>
+    <div class="spark">✻</div>
+    <div class="wTitle">Добро пожаловать в Ares <b>Code</b></div>
+    <div class="wMeta">/help — справка · /status — состояние системы</div>
+    <div class="wMeta">cwd: <span id="wDir">workspace/<b>root</b></span></div>
+    <div class="wMeta">ARES CODE V1</div>
     <div class="wTips">
       опиши задачу — агент сам: <b>план → код → запуск → фикс → отчёт</b><br>
-      вопросы — просто спроси · <b>!команда</b> — прямая shell<br>
-      плагины: «поставь плагин https://github.com/...» · 📦 архив · ❄ холод
+      <b>!команда</b> — прямая shell в песочницу (например, <b>!python3 main.py</b>)<br>
+      плагины: «поставь плагин https://github.com/...» · архив и холод — кнопки внизу
     </div>
   </div>
 
   <div id="term"></div>
 
   <form id="prompt" autocomplete="off">
-    <span class="ps1" id="ps1">◆ &gt;</span>
+    <span class="ps1" id="ps1">&gt;</span>
     <input id="inp" placeholder="опиши задачу или спроси…">
     <button id="bSend" type="submit">⏎</button>
   </form>
 
   <div id="quick">
-    <button id="bArch">📦 АРХИВ</button>
-    <button id="bCold">❄ ХОЛОД</button>
-    <button id="bClean">🧹 УБОРКА</button>
-    <button id="bStat">⚡ СТАТУС</button>
+    <button id="bArch">/архив</button>
+    <button id="bCold">/холод</button>
+    <button id="bClean">/уборка</button>
+    <button id="bStat">/статус</button>
+  </div>
+
+  <div id="foot">
+    <span id="fModel">ares:ares-v1-max</span><span class="sep">│</span>
+    <span id="fProj">workspace/root</span><span class="sep">│</span>
+    <span id="fTok">TOK — · REQ —</span><span class="sep">│</span>
+    <span id="fState" class="st-ok">[—]</span><span class="sep">│</span>
+    <span id="fPow">⚡AUTO</span>
   </div>
 </div>
 
@@ -174,59 +184,91 @@ async function api(path, opts={}){
 async function japi(path, opts={}){ const r = await api(path,opts); return r.json(); }
 
 /* ---------- вывод ---------- */
-function esc(){ const d=document.createElement('div'); d.className='ln'; term.appendChild(d); term.scrollTop=1e9; return d; }
-function line(text, cls=''){ const d=esc(); d.className='ln '+cls; d.textContent=text; term.scrollTop=1e9; return d; }
-function outbox(text){ const d=document.createElement('div'); d.className='outbox'; d.textContent=text; term.appendChild(d); term.scrollTop=1e9; }
+function push(el){ term.appendChild(el); if(spin) term.appendChild(spin); term.scrollTop=1e9; }
+function esc(){ const d=document.createElement('div'); d.className='ln'; push(d); return d; }
+function line(text, cls=''){ const d=esc(); d.className='ln '+cls; d.textContent=text; return d; }
 
-/* typewriter: дельты стримятся в ОДНУ строку */
-let dl=null, dbuf='', dtyping=false;
+/* вывод инструмента: «⎿» с отступом — продолжение шага ⏺ */
+function outbox(text){
+  const ls=String(text||'').split('\n');
+  const s='⎿  '+ls[0]+(ls.length>1?'\n    '+ls.slice(1).join('\n    '):'');
+  const d=document.createElement('div'); d.className='outbox'; d.textContent=s;
+  push(d);
+}
+function planbox(text){ const d=document.createElement('div'); d.className='planbox'; d.textContent=text; push(d); }
+
+/* ---------- typewriter: дельты стримятся в ОДНУ строку ---------- */
+let dl=null, dtn=null, dbuf='', dtyping=false;
 async function typeDelta(){
   if (dtyping) return; dtyping=true;
   while (dl && dbuf.length){
-    dl.textContent += dbuf[0]; dbuf = dbuf.slice(1); term.scrollTop=1e9;
+    dtn.data += dbuf[0]; dbuf = dbuf.slice(1); term.scrollTop=1e9;
     await sleep(12);
   }
   dtyping=false;
 }
 function delta(s){
-  if (!dl){ dl=esc(); const c=document.createElement('span'); c.className='cursor'; dl.appendChild(c); }
+  if (spinTimer) spinStop();                       // пошёл поток текста — спиннер не нужен
+  if (!dl){ dl=esc(); dtn=document.createTextNode(''); dl.appendChild(dtn);
+            const c=document.createElement('span'); c.className='cursor'; dl.appendChild(c); }
   dbuf += s; typeDelta();
 }
 function closeDelta(){
   if (dl){
     const cur = dl.querySelector('.cursor'); if (cur) cur.remove();
-    if (dbuf.length) dl.textContent += dbuf;  // конец стрима: дописываем остаток сразу, ничего не теряем
+    if (dbuf.length && dtn) dtn.data += dbuf;      // конец стрима: дописываем остаток сразу
   }
-  dl=null; dbuf='';
+  dl=null; dtn=null; dbuf='';
 }
 
-/* reasoning: 🧠-чип, текст тусклый, по клику раскрывается */
+/* ---------- reasoning: чип «мышление», по клику раскрывается ---------- */
 let rbuf=null, rtext='', rblock=null;
 function reason(s){
+  if (spinTimer) spinStop();
   if (!rbuf){
     rbuf=document.createElement('div');
     const chip=document.createElement('span'); chip.className='chip'; chip.textContent='🧠 мышление';
     rblock=document.createElement('div'); rblock.className='reason hidden';
     chip.onclick=()=>rblock.classList.toggle('hidden');
-    rblock.textContent='';
     rbuf.appendChild(chip); rbuf.appendChild(rblock);
-    term.appendChild(rbuf);
+    push(rbuf);
   }
   rtext += s; rblock.textContent = rtext; term.scrollTop=1e9;
 }
 function resetResp(){ closeDelta(); rbuf=null; rtext=''; rblock=null; }
+
+/* ---------- спиннер Claude Code: ·✢✳∗✻✽ ---------- */
+const FRAMES=['·','✢','✳','∗','✻','✽','✽','✻','∗','✳','✢'];
+let spin=null, spinTimer=null, spinT0=0, spinFi=0;
+function spinStart(label){
+  spinStop();
+  spin=document.createElement('div'); spin.className='ln dim';
+  const s=document.createElement('span'); s.className='red'; s.textContent=FRAMES[0];
+  const t=document.createTextNode(' '+label+' · 0s');
+  spin.appendChild(s); spin.appendChild(t);
+  spinT0=performance.now(); spinFi=0;
+  push(spin);
+  spinTimer=setInterval(()=>{
+    spinFi++; s.textContent=FRAMES[spinFi%FRAMES.length];
+    t.textContent=' '+label+' · '+Math.floor((performance.now()-spinT0)/1000)+'s';
+    term.scrollTop=1e9;
+  },120);
+}
+function spinStop(){ if(spinTimer){ clearInterval(spinTimer); spinTimer=null; } spin=null; }
 
 /* ---------- SSE ---------- */
 async function send(){
   if (busy) return;
   const inp=$('inp'); const text=inp.value.trim(); if(!text) return;
   inp.value=''; busy=true; t0=performance.now(); lastTok=0; lastProv='';
+  const wel=$('welcome'); if (wel) wel.remove();   // баннер «уезжает», как в Claude Code
   const shell = text.startsWith('!');
   const payload = {mode: shell?'SHELL':'AGENT',
                    text: shell ? text.slice(1).trim() : text,
                    power: POWER, project: PROJECT};
-  line(shell ? ('ares:~/'+PROJECT+'$ '+payload.text) : ('❯ '+text), shell?'red':'gray');
+  line(shell ? ('! '+payload.text) : ('> '+text), shell?'red':'white');
   if (shell && !payload.text){ busy=false; return; }
+  spinStart('Forging…');
   try{
     const r = await api('/api/chat',{method:'POST',body:JSON.stringify(payload)});
     const rd=r.body.getReader(), dec=new TextDecoder(); let buf='';
@@ -241,8 +283,9 @@ async function send(){
       }
     }
   }catch(e){ line('!! сеть: '+e.message,'red'); }
+  spinStop();
   const dt=((performance.now()-t0)/1000).toFixed(1);
-  line(`Forged for ${dt}s`+(lastProv?` · ${lastProv}`:'')+(lastTok?` · +${fmtK(lastTok)} TOK`:''), 'dim');
+  line('✻ Forged for '+dt+'s'+(lastProv?' · '+lastProv:'')+(lastTok?' · +'+fmtK(lastTok)+' TOK':''),'dim');
   line('',''); busy=false; inp.focus();
 }
 function fmtK(n){ n=+n||0; return n>=1000 ? (n/1000).toFixed(1)+'k' : String(n); }
@@ -250,7 +293,7 @@ function fmtK(n){ n=+n||0; return n>=1000 ? (n/1000).toFixed(1)+'k' : String(n);
 /* диагностика отказа: показываем, кем сервер видит пользователя */
 async function deny(icon){
   try{ const w=await japi('/api/whoami',{method:'POST',body:'{}'});
-    line(`${icon} отказ · твой id=${w.id} · ${w.owner?'владелец ✔':'НЕ владелец'} · одобрен: ${w.approved?'да':'нет'}`, w.owner?'red':'dim');
+    line(icon+' отказ · твой id='+w.id+' · '+(w.owner?'владелец ✔':'НЕ владелец')+' · одобрен: '+(w.approved?'да':'нет'), w.owner?'red':'dim');
   }catch(e){ line(icon+' нет связи','red'); }
 }
 
@@ -258,74 +301,71 @@ async function deny(icon){
 const TOOL={run:'Bash', shell:'Bash', write:'Write', edit:'Edit', read:'Read', list:'List'};
 function handle(ev){
   switch(ev.t){
-    case 'provider': closeDelta(); lastProv='ares:ares-v1-max'; line('» ares:ares-v1-max','dim'); break;
-    case 'delta': delta(ev.s); break;
-    case 'reason': reason(ev.s); break;
-    case 'mode': line('· '+ev.s,'dim'); break;
-    case 'note': closeDelta(); line('· '+ev.s,'dim'); break;
-    case 'plan': {
-      closeDelta();
-      line('┌─ ПЛАН','red');
-      outbox(ev.s); break;
-    }
+    case 'provider': closeDelta(); lastProv='ares:ares-v1-max';
+                     line('» ares:ares-v1-max','dim'); spinStart('Forging…'); break;
+    case 'delta':    delta(ev.s); break;
+    case 'reason':   reason(ev.s); break;
+    case 'mode':     line('· '+ev.s,'dim'); spinStart('Forging…'); break;
+    case 'note':     closeDelta(); line('· '+ev.s,'dim'); spinStart('Forging…'); break;
+    case 'plan':     closeDelta(); spinStop(); line('✻ ПЛАН','red'); planbox(ev.s); break;
     case 'step': {
-      closeDelta();
+      closeDelta(); spinStop();
       const k = TOOL[ev.kind] || (ev.kind||'tool').toUpperCase();
-      let s = `⏺ ${k}(${ev.s||''})`;
-      if (ev.kind==='shell' && ev.exit!==undefined) s += ` · exit ${ev.exit}`;
+      let s = '⏺ '+k+'('+(ev.s||'')+')';
+      if (ev.kind==='shell' && ev.exit!==undefined) s += ' · exit '+ev.exit;
       line(s, ev.ok ? 'white' : 'red');
       if (ev.out) outbox(ev.out);
       break;
     }
-    case 'out': outbox(ev.s); break;
+    case 'out':   outbox(ev.s); break;
     case 'usage': lastTok=ev.tok; break;
     case 'state': hudTok(ev.hud, ev.state); break;
-    case 'done': closeDelta(); if (ev.s) line('✔ '+ev.s,'ok'); break;
-    case 'fail': closeDelta(); line('✖ '+ev.s,'red'); break;
-    case 'err': closeDelta(); line('!! '+ev.s,'red'); break;
-    case 'end': closeDelta(); resetResp(); break;
+    case 'done':  spinStop(); closeDelta(); if (ev.s) line('✔ '+ev.s,'ok'); break;
+    case 'fail':  spinStop(); closeDelta(); line('✖ '+ev.s,'red'); break;
+    case 'err':   spinStop(); closeDelta(); line('!! '+ev.s,'red'); break;
+    case 'end':   spinStop(); closeDelta(); resetResp(); break;
   }
 }
 
-/* ---------- HUD (опрос 5с) ---------- */
+/* ---------- HUD ---------- */
 function hudTok(hud, state){
-  $('hudTok').textContent=hud;
-  const st=$('hudSt'); st.textContent='['+state+']';
-  st.className = state==='OK' ? 'gray' : (state==='WARN' ? 'ok' : 'red');
+  $('fTok').textContent=hud;
+  const st=$('fState'); st.textContent='['+state+']';
+  st.className = state==='OK' ? 'st-ok' : (state==='WARN' ? 'st-warn' : 'st-bad');
 }
+function fmtUp(sec){ const h=Math.floor(sec/3600), m=Math.floor(sec%3600/60); return h? h+'ч'+m+'м' : m+'м'; }
 async function hud(){
   try{
     const d=await japi('/api/hud');
     const s=d.sys;
-    $('hudSys').textContent=`CPU ${Math.round(s.cpu)}% · RAM ${Math.round(s.ram_pct)}% · DISK ${Math.round(s.disk_pct)}% · up ${fmtUp(s.uptime_s)}`;
+    $('hudSys').textContent='CPU '+Math.round(s.cpu)+'% · RAM '+Math.round(s.ram_pct)+'% · DISK '+Math.round(s.disk_pct)+'% · up '+fmtUp(s.uptime_s);
     hudTok(d.budget.hud, d.budget.state);
   }catch(e){}
 }
-function fmtUp(sec){ const h=Math.floor(sec/3600), m=Math.floor(sec%3600/60); return h? h+'ч'+m+'м' : m+'м'; }
 
 /* ---------- мощность (⚡ AUTO → FAST → MAX) ---------- */
-$('hudPow').onclick=()=>{
+ $('fPow').onclick=()=>{
   POWER = POWER==='AUTO'?'FAST':(POWER==='FAST'?'MAX':'AUTO');
-  $('hudPow').textContent='⚡'+POWER; $('inp').focus();
+  $('fPow').textContent='⚡'+POWER; $('inp').focus();
 };
 
 /* ---------- quick-действия ---------- */
-$('bArch').onclick=async()=>{ try{ const d=await japi('/api/archive',{method:'POST',body:JSON.stringify({project:PROJECT})});
-  line(`📦 ${d.archive.project} · ${fmtK(d.archive.size)}Б · sha${d.archive.sha256.slice(0,10)}` + (d.sent_to_chat?' · файл в чате ⬆':''),'dim'); }catch(e){ deny('📦'); } };
-$('bCold').onclick=async()=>{ try{ const d=await japi('/api/cold',{method:'POST',body:JSON.stringify({project:PROJECT})});
-  line(d.ok? `❄ ${d.result.mailbox} · частей ${d.result.parts}` : '❄ '+d.result.error, d.ok?'dim':'red'); }catch(e){ deny('❄'); } };
-$('bClean').onclick=async()=>{ try{ const d=await japi('/api/cleanup',{method:'POST',body:JSON.stringify({dry_run:true})});
-  outbox('🧹 убралось бы:\n'+(d.would_move.join('\n')||'(ничего)')+'\nактивный защищён: '+d.protected); }catch(e){ deny('🧹'); } };
-$('bStat').onclick=async()=>{ try{ const d=await japi('/healthz');
+ $('bArch').onclick=async()=>{ try{ const d=await japi('/api/archive',{method:'POST',body:JSON.stringify({project:PROJECT})});
+  line('📦 '+d.archive.project+' · '+fmtK(d.archive.size)+'Б · sha'+d.archive.sha256.slice(0,10)+(d.sent_to_chat?' · файл в чате ⬆':''),'dim'); }catch(e){ deny('📦'); } };
+ $('bCold').onclick=async()=>{ try{ const d=await japi('/api/cold',{method:'POST',body:JSON.stringify({project:PROJECT})});
+  line(d.ok? '❄ '+d.result.mailbox+' · частей '+d.result.parts : '❄ '+d.result.error, d.ok?'dim':'red'); }catch(e){ deny('❄'); } };
+ $('bClean').onclick=async()=>{ try{ const d=await japi('/api/cleanup',{method:'POST',body:JSON.stringify({dry_run:true})});
+  planbox('🧹 убралось бы:\n'+(d.would_move.join('\n')||'(ничего)')+'\nактивный защищён: '+d.protected); }catch(e){ deny('🧹'); } };
+ $('bStat').onclick=async()=>{ try{ const d=await japi('/healthz');
   const v=Object.values(d.providers||{});
   const p=v.length? 'ares:'+(v.some(x=>x.ok)?'✅':'⚠️') : 'нет ключей';
-  line(`⚡ ${d.budget.hud} [${d.budget.state}] · ${p}`,'dim'); }catch(e){ line('⚡ нет связи','red'); } };
+  line('⚡ '+d.budget.hud+' ['+d.budget.state+'] · '+p,'dim'); }catch(e){ line('⚡ нет связи','red'); } };
 
 /* ---------- ввод ---------- */
-$('prompt').addEventListener('submit', e=>{ e.preventDefault(); send(); });
+ $('prompt').addEventListener('submit', e=>{ e.preventDefault(); send(); });
 
 /* ---------- гейт ---------- */
-$('bReq').onclick=async()=>{
+ $('bReq').onclick=async()=>{
   $('gateMsg').textContent='… отправляю';
   try{ await japi('/api/access_request',{method:'POST',body:'{}'});
        $('gateMsg').textContent='✔ Заявка у владельца. Как одобрит — вернись в меню бота и открой заново.'; }
@@ -343,8 +383,9 @@ $('bReq').onclick=async()=>{
   }
   $('app').classList.remove('hidden');
   PROJECT=(w.project && w.project!=='default') ? w.project : PROJECT;  // 'default' сервера не перекрывает корень
-  line(`· ты: id=${w.id} · ${w.owner?'владелец':'НЕ владелец'} · доступ: ${w.approved?'открыт':'есть'}`,'dim');
+  line('· ты: id='+w.id+' · '+(w.owner?'владелец':'НЕ владелец')+' · доступ: '+(w.approved?'открыт':'есть'),'dim');
   $('wDir').innerHTML='workspace/<b></b>'; $('wDir').querySelector('b').textContent=PROJECT;
+  $('fProj').textContent='workspace/'+PROJECT;
   hud(); setInterval(hud, 5000);
   $('inp').focus();
 })();
