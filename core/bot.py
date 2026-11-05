@@ -80,6 +80,7 @@ HELP_TEXT = ("ARES CODE · справка\n\n"
              "/coldstatus — статус почтовых ящиков\n"
              "/restore <id> — восстановить архив\n"
              "/cleanup — уборка (посмотреть); /cleanup yes — выполнить\n"
+             "/wipe [проект] — очистить содержимое проекта, даже активного\n"
              "/id — мой Telegram ID\n"
              "/help — эта справка\n\n"
              "Команды SHELL (режим SHELL в терминале):\n"
@@ -312,6 +313,22 @@ async def cmd_cleanup(m: Message):
         removed = cleaner.purge_trash()
         await m.answer("🧹 Убрано в .trash: " + (", ".join(res["moved"]) or "—") +
                        "\nУдалено из .trash: " + (", ".join(removed) or "—"))
+
+
+@router.message(Command("wipe"))
+async def cmd_wipe(m: Message):
+    """Очистить содержимое проекта (в т.ч. активного) — всё в .trash."""
+    if not db.is_owner(m.from_user.id):
+        return
+    parts = (m.text or "").split()
+    project = "".join(c for c in (parts[1] if len(parts) > 1 else
+                                   db.kv_get("active_project", "default"))
+                       if c.isalnum() or c in "-") or "default"
+    moved = cleaner.wipe_project(project)
+    lst = (", ".join(moved[:10]) + ("…" if len(moved) > 10 else "")) if moved else "—"
+    await m.answer(f"🧹 workspace/{project}: в .trash убрано ({len(moved)}):\n{lst}\n"
+                   f"Из .trash удалится само через 24ч (или сразу: /cleanup yes)",
+                   reply_markup=kb_open())
 
 
 @router.message(Command("coldstatus"))
