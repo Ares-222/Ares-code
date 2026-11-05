@@ -61,10 +61,10 @@ GLM_MODEL = _s("GLM_MODEL", "glm-4.7-flash")
 GLM_VISION_MODEL = _s("GLM_VISION_MODEL", "glm-4.6v-flash")
 
 GEMINI_API_KEY = _s("GEMINI_API_KEY")
-GEMINI_MODEL = _s("GEMINI_MODEL", "gemini-2.0-flash")
+GEMINI_MODEL = _s("GEMINI_MODEL", "gemini-3.8-flash")
 
 OPENROUTER_API_KEY = _s("OPENROUTER_API_KEY")
-OPENROUTER_MODEL = _s("OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct:free")
+OPENROUTER_MODEL = _s("OPENROUTER_MODEL", "openrouter/free")
 OPENROUTER_FALLBACKS = [m.strip() for m in os.getenv("OPENROUTER_FALLBACKS", "").split(",") if m.strip()]
 
 # OmniRoute (github.com/diegosouzapw/OmniRoute) — локальный роутер бесплатных пулов,
@@ -114,4 +114,3 @@ TYPEWRITER_MS = _i("TYPEWRITER_MS", 15)
 
 PORT = _i("PORT", 8000)
 ALLOW_UNAUTH_DEV = _s("ALLOW_UNAUTH_DEV", "0") == "1"
- 
